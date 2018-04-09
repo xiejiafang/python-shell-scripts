@@ -39,7 +39,6 @@ function checkState(){
 }
 
 #连接本地库
-$ph/db2 connect to hnii
 
 #判断依赖表是否加工完成
 isSuccess="N"

@@ -17,7 +17,6 @@ dbLocal=$local;
 read -p "即将从$dbSource上迁移$answer到$dbLocal。[y/n]:" yesOrNo;
 
 if [ $yesOrNo == y ]; then
-	db2 connect to $dbLocal;
 	db2 "set current schema administrator";
 	
 	#设置列名

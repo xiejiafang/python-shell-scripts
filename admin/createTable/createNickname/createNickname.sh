@@ -1,5 +1,4 @@
 #!/bin/sh
-db2 connect to hnii;
 
 while read line
 do

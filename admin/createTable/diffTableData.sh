@@ -9,7 +9,6 @@ else
         var=$1;
 fi
 #连接数据库
-#db2 connect to hnii
 db2 "set current schema administrator"
 
 #SQL语句

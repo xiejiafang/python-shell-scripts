@@ -3,8 +3,6 @@
 source /home/db2inst/.bash_profile
 ph="/home/db2inst/admin/createTable"
 
-#connect to database;
-db2 connect to hnii
 
 #检查是否有新增表
 echo "---------------------------------------------------------------------------------------------------------";

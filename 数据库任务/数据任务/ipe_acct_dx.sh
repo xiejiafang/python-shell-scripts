@@ -43,7 +43,6 @@ isConn="N"
 time=0
 while [ $isConn = "N" ]
 do
-	$ph/db2 "connect to tk_90_1 user zhengzh using zhengzh33y"  >/dev/null
 	if [ $? == 0 ]; then
 		isConn="Y"
 		db2 connect reset
@@ -59,7 +58,6 @@ do
 done
 
 #连接本地库
-$ph/db2 connect to hnii
 
 #下载数据
 isSuccess="N"

@@ -44,7 +44,6 @@ isConn="N"
 time=0
 while [ $isConn = "N" ]
 do
-	$ph/db2 "connect to tk_90_1 user zhengzh using zhengzh33y"  >/dev/null
 	if [ $? == 0 ]; then
 		isConn="Y"
 		db2 connect reset
@@ -60,7 +59,6 @@ do
 done
 
 #连接本地库
-$ph/db2 connect to hnii
 
 #设定数组
 array=(ipe_rtrn_rt ipe_acct_rt ipe_hpad_rt)

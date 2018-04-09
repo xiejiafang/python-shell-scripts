@@ -14,7 +14,7 @@ months = 2
 #承保业绩
 def acct():
     #建立数据库连接
-    conn=pyodbc.connect('DRIVER={DB2};SERVER=10.19.19.34;DATABASE=HNII;UID=db2inst;PWD=okm34db2&;charset=utf-8')
+    conn=pyodbc.connect('DRIVER={DB2};SERVER=192.168.1.1;DATABASE=HNII;UID=db2inst;mypasswd&;charset=utf-8')
     cur = conn.cursor()
     print("delete from hn_web_acct...")
     curr_sql= "delete from administrator.hn_web_acct where month BETWEEN int(decimal(CURRENT date - %s months)/100) AND int(decimal(CURRENT date)/100)" % months
@@ -42,7 +42,7 @@ def acct():
 #实收保费
 def xuqiacct():
     #建立数据库连接
-    conn=pyodbc.connect('DRIVER={DB2};SERVER=10.19.19.34;DATABASE=HNII;UID=db2inst;PWD=okm34db2&;charset=utf-8')
+    conn=pyodbc.connect('DRIVER={DB2};SERVER=192.168.1.1;DATABASE=HNII;UID=db2inst;mypasswd&;charset=utf-8')
     cur = conn.cursor()
     print("delete from hn_web_xuqiacct...")
     curr_sql= "delete from administrator.hn_web_xuqiacct where month BETWEEN int(decimal(CURRENT date - %s months)/100) AND int(decimal(CURRENT date)/100)" % months
@@ -66,7 +66,7 @@ def xuqiacct():
 
 def cnttype():
     #建立数据库连接
-    conn=pyodbc.connect('DRIVER={DB2};SERVER=10.19.19.34;DATABASE=HNII;UID=db2inst;PWD=okm34db2&;charset=utf-8')
+    conn=pyodbc.connect('DRIVER={DB2};SERVER=192.168.1.1;DATABASE=HNII;UID=db2inst;mypasswd&;charset=utf-8')
     cur = conn.cursor()
     print("delete from hn_web_cnttype...")
     curr_sql= "delete from administrator.hn_web_cnttype where month BETWEEN int(decimal(CURRENT date - %s months)/100) AND int(decimal(CURRENT date)/100)" % months
@@ -91,7 +91,7 @@ def cnttype():
 
 def hdrl():
     #建立数据库连接
-    conn=pyodbc.connect('DRIVER={DB2};SERVER=10.19.19.34;DATABASE=HNII;UID=db2inst;PWD=okm34db2&;charset=utf-8')
+    conn=pyodbc.connect('DRIVER={DB2};SERVER=192.168.1.1;DATABASE=HNII;UID=db2inst;mypasswd&;charset=utf-8')
     cur = conn.cursor()
     print("delete from hn_web_hdrl...")
     curr_sql= "delete from administrator.hn_web_hdrl where month BETWEEN int(decimal(CURRENT date - %s months)/100) AND int(decimal(CURRENT date)/100)" % months
@@ -117,7 +117,7 @@ def hdrl():
 
 def rl():
     #建立数据库连接
-    conn=pyodbc.connect('DRIVER={DB2};SERVER=10.19.19.34;DATABASE=HNII;UID=db2inst;PWD=okm34db2&;charset=utf-8')
+    conn=pyodbc.connect('DRIVER={DB2};SERVER=192.168.1.1;DATABASE=HNII;UID=db2inst;mypasswd&;charset=utf-8')
     cur = conn.cursor()
     print("delete from hn_web_rl...")
     curr_sql= "delete from administrator.hn_web_rl "
@@ -160,7 +160,7 @@ def rl():
 
 def rl_in():
     #建立数据库连接
-    conn=pyodbc.connect('DRIVER={DB2};SERVER=10.19.19.34;DATABASE=HNII;UID=db2inst;PWD=okm34db2&;charset=utf-8')
+    conn=pyodbc.connect('DRIVER={DB2};SERVER=192.168.1.1;DATABASE=HNII;UID=db2inst;mypasswd&;charset=utf-8')
     cur = conn.cursor()
     print("delete from hn_web_rl_in...")
     curr_sql= "delete from administrator.hn_web_rl_in where month BETWEEN int(decimal(CURRENT date - %s months)/100) AND int(decimal(CURRENT date)/100)" % months
@@ -184,7 +184,7 @@ def rl_in():
 
 def rl_out():
     #建立数据库连接
-    conn=pyodbc.connect('DRIVER={DB2};SERVER=10.19.19.34;DATABASE=HNII;UID=db2inst;PWD=okm34db2&;charset=utf-8')
+    conn=pyodbc.connect('DRIVER={DB2};SERVER=192.168.1.1;DATABASE=HNII;UID=db2inst;mypasswd&;charset=utf-8')
     cur = conn.cursor()
     print("delete from hn_web_rl_out...")
     curr_sql= "delete from administrator.hn_web_rl_out where month BETWEEN int(decimal(CURRENT date - %s months)/100) AND int(decimal(CURRENT date)/100)" % months

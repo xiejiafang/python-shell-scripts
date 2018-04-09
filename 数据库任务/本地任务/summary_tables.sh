@@ -10,7 +10,6 @@ start=`date +%s`
 #set -x
 
 #连接本地库
-db2 connect to hnii
 
 #判断依赖表是否加工完成
 isSuccess="N"

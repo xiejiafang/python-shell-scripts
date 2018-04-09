@@ -2,7 +2,6 @@
 #coding:utf-8
 import os
 import commands
-os.system("db2 connect to hnii")
 str = commands.getoutput("db2 list application |grep ^REPORT |awk '{print $3}'")
 str = str.split("\n")
 for num in str:

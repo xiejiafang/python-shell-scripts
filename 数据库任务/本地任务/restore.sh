@@ -9,7 +9,6 @@ source /home/db2inst/.bash_profile
 start=`date +%s`
 
 #连接数据库
-$ph/db2 "connect to hnii"  
 
 #恢复文件
 file="/home/db2inst/backupAndRestore/`date +%F`"

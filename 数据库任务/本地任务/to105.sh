@@ -39,7 +39,6 @@ function checkState(){
 }
 
 #连接本地库
-$ph/db2 connect to hnii
 db2 "delete from db105.cbbf"
 db2 "
 	INSERT INTO DB105.CBBF  

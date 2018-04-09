@@ -12,7 +12,6 @@ set -x
 isConnect='N'
 while [ $isConnect = "N" ]
 do
-	$ph/db2 connect to hnii
 	if [ $? = 0 ]; then
 		isConnect="Y"
 	else

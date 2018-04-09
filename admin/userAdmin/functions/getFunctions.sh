@@ -1,5 +1,4 @@
 #!/bin/sh
-db2 connect to hnii
 db2 "set current schema administrator"
 #SQL语句
 sql="select funcname 

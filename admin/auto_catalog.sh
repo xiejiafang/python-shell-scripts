@@ -25,13 +25,11 @@ if [ $answer == "y" ]; then
 	db2 catalog db $dbname901 as $dbname901 at node $dbname901
 	#测试远程节点数据库是否可以正常连接
 	echo "连接节点 $dbname 上的数据库 $dbname..."
-	db2 connect to $dbname901 user $user using $password
 	#断开连接
 	db2 terminate
 	#连接本地数据库
 	read -p "请输入本地数据库名称：" localdb
 	echo "连接到$localdb..."
-	db2 connect to $localdb
 	#激活联邦支持
 	echo "激活联邦支持"
 	db2 update database manager configuration using federated yes

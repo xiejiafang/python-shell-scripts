@@ -1,5 +1,4 @@
 #!/bin/sh
-db2 connect to hnii; 
 db2 "with mytable as(
 select 
         company_name,

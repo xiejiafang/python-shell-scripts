@@ -13,7 +13,6 @@ set -x;
 #isOpen="false"
 #while [ $isOpen == "false" ]
 #do
-#        $ph/db2 connect to hnii
 #        $ph/db2 "select * from hnii0.$var fetch first 1 rows only" >/dev/null
 #        if [ $? == 0 ];then
 #                isOpen="true"
@@ -24,7 +23,6 @@ set -x;
 #done
 
 #连接数据库
-db2 connect to hnii;
 db2 "set current schema administrator"
 
 #定义游标

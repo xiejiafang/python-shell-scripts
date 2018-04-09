@@ -43,7 +43,6 @@ isConn="N"
 time=0
 while [ $isConn = "N" ]
 do
-	$ph/db2 "connect to hnii"
 	if [ $? == 0 ]; then
 		isConn="Y"
 	        #清空表

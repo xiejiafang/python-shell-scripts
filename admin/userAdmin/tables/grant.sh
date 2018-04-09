@@ -1,7 +1,6 @@
 #!/bin/sh
 
 #连接数据库
-db2 connect to hnii
 
 #列出所有表，并授权
 source ./getTableList.sh 0

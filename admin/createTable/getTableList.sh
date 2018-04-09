@@ -6,7 +6,6 @@ if [ $# != 1 ]; then
 else
         var=$1;
 fi
-db2 connect to hnii
 db2 "set current schema administrator"
 #SQL语句
 if [ $var == 1 ];then

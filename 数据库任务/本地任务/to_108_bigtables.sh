@@ -7,7 +7,6 @@ source /home/db2inst/.bash_profile
 start=`date +%s`
 
 #连接本地库
-db2 connect to hnii
 
 
 #checkdate

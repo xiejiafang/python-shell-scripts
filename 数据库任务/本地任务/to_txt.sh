@@ -7,7 +7,6 @@ source /home/db2inst/.bash_profile
 start=`date +%s`
 
 #连接本地库
-db2 connect to hnii
 filename="report_list"
 sql="
         export to $filename.txt of del
@@ -16,7 +15,6 @@ sql="
 db2 -x "$sql" 
 scp $filename.txt it@10.19.19.108:/home/it
 
-db2 connect to hnii
 filename="report_team"
 sql="
         export to $filename.txt of del

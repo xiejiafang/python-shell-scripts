@@ -3,7 +3,6 @@
 #定义命令路径
 ph='/home/db2inst/sqllib/bin'
 
-db2 connect to hnii;
 
 db2 "alter table administrator.hn_ycb_rtrn activate not logged initially with empty table"
 db2 "insert into administrator.hn_ycb_rtrn select * from administrator.v_ycb_rtrn"

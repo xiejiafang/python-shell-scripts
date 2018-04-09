@@ -43,7 +43,6 @@ isConn="N"
 time=0
 while [ $isConn = "N" ]
 do
-	$ph/db2 "connect to tk_info user tkipe using tknew"  
 	if [ $? == 0 ]; then
 		isConn="Y"
 		$ph/db2 "export to ipe_acct_bnk of del select * from tkipe.ipe_acct_bnk where company = 'D' and trandate between 20140101 and 20140707 "
@@ -59,7 +58,6 @@ do
 done
 
 #连接本地库
-$ph/db2 connect to hnii
 
 #下载数据
 isSuccess="N"

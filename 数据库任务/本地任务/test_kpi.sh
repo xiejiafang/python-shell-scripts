@@ -5,7 +5,6 @@ source /home/db2inst/.bash_profile
 
 
 #连接本地库
-db2 connect to hnii
 
 isSuccess="N"
 while [ $isSuccess = "N" ]

@@ -43,7 +43,6 @@ isConn="N"
 time=0
 while [ $isConn = "N" ]
 do
-	$ph/db2 "connect to tk_info user tkipe using tknew"  
 	if [ $? == 0 ]; then
 		isConn="Y"
 		$ph/db2 "export to xuqidetail_bnk of del 
@@ -84,7 +83,6 @@ do
 done
 
 #连接本地库
-$ph/db2 connect to hnii
 
 #下载数据
 isSuccess="N"

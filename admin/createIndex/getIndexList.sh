@@ -1,5 +1,4 @@
 #!/bin/sh
-db2 connect to hnii
 db2 "set current schema administrator"
 #获取远程库的表
 db2 "select indname,tabname,replace(substr(colnames,2),'+',',')

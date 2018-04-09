@@ -10,7 +10,6 @@ source /home/db2inst/.bash_profile
 #set -x
 
 #连接本地库
-$ph/db2 connect to hnii
 #判断是否有昨天的业绩
 result=`db2 "select case when max(trandate)=decimal(current date -1 days) then 'YYY' else 'NNN' end as check_result from administrator.hn_acctinfo where trandate < decimal(current date)"`
 result=`expr index "$result" "Y"`

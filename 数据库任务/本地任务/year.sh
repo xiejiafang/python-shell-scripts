@@ -1,4 +1,3 @@
-db2 connect to hnii
 db2 "
 export to year.txt of del
 select

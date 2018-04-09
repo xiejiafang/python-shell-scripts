@@ -5,7 +5,7 @@ import sys
 import pyodbc
 
 #设置数据库连接
-conn=pyodbc.connect('DRIVER={DB2};SERVER=10.19.19.34;DATABASE=HNII;UID=db2inst;PWD=okm34db2&;charset=utf-8')
+conn=pyodbc.connect('DRIVER={DB2};SERVER=192.168.1.1;DATABASE=HNII;UID=db2inst;mypasswd&;charset=utf-8')
 cur = conn.cursor()
 
 #个险实时业绩

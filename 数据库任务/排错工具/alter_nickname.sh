@@ -7,7 +7,6 @@ source /home/db2inst/.bash_profile
 set -x
 
 #连接本地库
-db2 connect to hnii
 
 #循环
 while read table

@@ -13,7 +13,6 @@
 #引入用户环境变量
 source /home/db2inst/.bash_profile
 
-db2 "connect to hnii29 user administrator using 'Win2003OS)@('"; 
 sql_js="
 	SELECT
 	series,
