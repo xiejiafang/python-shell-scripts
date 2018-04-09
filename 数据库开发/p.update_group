@@ -1,0 +1,8 @@
+create procedure p.update_group
+begin atomic
+	for mytable as select shortname from administrator.hn_aracde
+	do
+        	update administrator.hn_medium a set agency_group=mytable.shortname
+                	where a.name like '%'||mytable.shortname||'%';
+	end for;
+end@

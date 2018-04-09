@@ -1,0 +1,30 @@
+create procedure p.weixin_dgxrl_anal(dateStart decimal(8,0),dateEnd decimal(8,0),sys varchar(3),rule decimal(5,0),
+index_num char(3),information varchar(50))
+begin atomic
+        declare info varchar(1000) default '';
+        declare info_temp varchar(50) default '';
+        set info = information||CHR(10)||'截止时间:'||trim(char(day(current timestamp)))||'日'
+        ||trim(char(hour(current timestamp)))||'点'||trim(char(minute(current timestamp)))||'分'
+        ||CHR(10)||'============='||CHR(10);
+        for row as
+                with agencyinfo as(                
+                select station,count(agency_code) rl 
+                        from table(f.get_yb_agent()) a      
+                                where series = sys 
+                                        group by station),
+                hd as(
+                select branch,name,bbrl  
+                        from table(f.get_yb_anal(dateStart,dateEnd,sys,rule))a),
+                rate as(                                
+                select value(name,'分公司平均值') as name,case when sum(bbrl) >=0 then strip(trim(char(dec(sum(bbrl)*1.0000/sum(rl)*100,10,2)))||'%',l,'0')
+                else '-'||strip(strip(trim(char(dec(sum(bbrl)*1.0000/sum(rl)*100,10,2)))||'%',l,'-'),l,'0') end as rate 
+                        from agencyinfo a,hd b 
+                                where a.station=b.branch
+                                        group by grouping sets((name),()) order by sum(bbrl)*1.0000/sum(rl) desc)
+                select '['||trim(name) || ']' || rate ||CHR(10) as result from rate       
+                do
+                set info_temp = result;
+                set info = info || info_temp;
+        end for;
+        update administrator.hn_weixin set index_res=info where index_name = index_num;
+end @

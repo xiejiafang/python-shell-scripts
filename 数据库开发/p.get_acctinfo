@@ -1,0 +1,34 @@
+create procedure p.get_acctinfo(myDays decimal(3,0))
+begin
+        -----------------------------------------------
+        declare dateStart decimal(8,0);
+        declare dateEnd decimal(8,0);
+        set dateStart=decimal(current date - myDays days);
+        set dateEnd=decimal(current date);
+        -----------------------------------------------
+        delete from administrator.hn_acctinfo where trandate between dateStart and dateEnd;
+        -----------------------------------------------
+        insert into administrator.hn_acctinfo
+        select CHDRNUM,value(INS,''),value(FREQ,''),value(INSS,''),value(PERIOD,0),ACCTAMT,ACCTAMT_STD,SUMINS,TRANDATE,BATCTRCDE,BATC_TYPE,BATC_TYPE_C,value(LT_IND,''),value(HC_IND,''),AGNTNUM,
+        AGNTNAME,AGTYPE,TEAMNUM,TEAMNAME,TEAMTYPE,PARTNUM,PARTNAME,PARTTYPE,
+        (case when a.agtype='RC' and aracde<>'' then aracde_xuqi else aracde end ) as ARACDE,
+        BRANCH,SACSCODE,SACSTYP,CNTTYPE,HPRRCVDT,
+        --dec(acctamt*(select cmrate from administrator.zfeepf b where  a.trandate between currfrom and currto and b.crtable=a.inss 
+        --and a.period > b.zrterm01 and  a.period <= b.zrterm02 order by tyearno fetch first 1 rows only)/100,12,2),
+	0,
+        val_rate,acctamt_std_a,vargraphic(srcebus),srcebus
+                from administrator.ipe_acct a
+                        where  batctrcde<>'BA67' and trandate between dateStart and dateEnd;
+        ------------------------------------------------------------------------------
+        update administrator.hn_acctinfo
+        set (aracde,teamnum,teamname,partnum,partname,agtype,agntname)=
+        (select aracde,teamnum,teamname,partnum,partname,agtype,agntname 
+                from administrator.hn_agntinfo
+                        where agntnum=administrator.hn_acctinfo.agntnum)
+                where trandate between decimal(current date - 30 days) and dateEnd
+                and agtype in ('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+                --and (agtype is null or aracde is null or  agntname is null or agtype='' or aracde='' or agntname='')
+		;
+	update administrator.hn_acctinfo set branch='80',aracde='807' 
+		where aracde='I01' and  trandate between decimal(current date - 30 days) and dateEnd ;
+end @

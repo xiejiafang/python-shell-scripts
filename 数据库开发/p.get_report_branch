@@ -1,0 +1,152 @@
+CREATE PROCEDURE p.GET_REPORT_BRANCH()
+	DYNAMIC RESULT SETS 1
+
+P1: BEGIN
+	
+declare the_day int;
+declare the_beginday decimal(8,0);
+declare the_monenday decimal(8,0);
+
+set the_day=(values day(current date));
+set the_beginday=(values year(current date))*10000+0101;
+
+if the_day=1 then
+set the_monenday =(values year(current date))*10000+(values month(current date))*100+the_day-70;
+else
+set the_monenday =(values year(current date))*10000+(values month(current date))*100+the_day-1;
+end if ;
+
+--11101_report
+delete from administrator.hn_report_branch where report_no='11101';
+insert into
+administrator.hn_report_branch
+select b.branch,'11101',b.bb,c.bb,0,0,0
+from(
+select branch,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and batctrcde<>'TGJC'
+group by branch
+)b
+left join(
+select branch,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where trandate between (the_beginday-10000) and (the_monenday-10000)
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and batctrcde<>'TGJC' group by branch)c on b.branch=c.branch
+with ur;
+
+--RC
+insert into
+administrator.hn_report_branch
+select b.branch,'11101',b.bb,c.bb,0,0,1
+from(
+select branch,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype='RC'
+and batctrcde<>'TGJC'
+group by branch
+)b
+left join(
+select branch,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where trandate between (the_beginday-10000) and (the_monenday-10000)
+and agtype='RC'
+and batctrcde<>'TGJC' group by branch)c on b.branch=c.branch
+with ur;
+
+--营销
+insert into
+administrator.hn_report_branch
+select b.branch,'11101',b.bb,c.bb,0,0,2
+from(
+select branch,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+and batctrcde<>'TGJC'
+group by branch
+)b
+left join(
+select branch,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where trandate between (the_beginday-10000) and (the_monenday-10000)
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+and batctrcde<>'TGJC' group by branch)c on b.branch=c.branch
+with ur;
+
+
+--11I03市场速报
+
+delete from administrator.hn_report_branch
+where temp5=(values year(current date)*100+month(current date))
+and report_no='11I03' with ur;
+
+insert into administrator.hn_report_branch
+select a.branch,'11I03',coalesce(b.bb,0),coalesce(c.bb,0),coalesce(d.bb,0),0,(values year(current date)*100+month(current date))
+from (
+select branch from administrator.hn_branch
+where branch<>'D'
+)a left join(
+select a.branch,sum(acctamt_std)bb
+from administrator.hn_acctinfo a,administrator.hn_agntinfo b
+where a.trandate between the_beginday and the_monenday
+and right(b.fgcommtabl,2)='00'
+and a.agtype in ('TA','SA','TS','AS','SS','SM','SD','UM','AD','HD','SE','RC')
+and a.batctrcde<>'TGJC'
+and a.aracde in(select aracde from administrator.hn_aracde where cityflag in('Y','M') and validflag='1')
+and a.agntnum=b.agntnum
+group by a.branch
+)b on a.branch=b.branch
+left join(
+select a.branch,sum(acctamt_std)bb
+from administrator.hn_acctinfo a,administrator.hn_agntinfo b
+where a.trandate between the_beginday and the_monenday
+and right(b.fgcommtabl,2)='00'
+and a.agtype in ('TA','SA','TS','AS','SS','SM','SD','UM','AD','HD','SE','RC')
+and a.batctrcde<>'TGJC'
+and a.aracde in(
+select aracde
+from administrator.hn_aracde
+where validflag='1'
+and right(aracde,2)<>'99'
+and aracde not like '%Z%'
+and aracde not like '1T%'
+and aracde not like '1F%'
+and aracde not like '1W%'
+and aracde not like '1H%'
+and araname not like '%FIC%'
+and cityflag='N'
+)
+and a.agntnum=b.agntnum
+group by a.branch
+)c on a.branch=c.branch
+left join(
+select a.branch,sum(acctamt_std)bb
+from administrator.hn_acctinfo a,administrator.hn_agntinfo b
+where a.trandate between the_beginday and the_monenday
+and right(b.fgcommtabl,2)<>'00'
+and a.agtype in ('TA','SA','TS','AS','SS','SM','SD','UM','AD','HD','SE','RC')
+and a.batctrcde<>'TGJC'
+and a.aracde in(
+select aracde
+from administrator.hn_aracde
+where validflag='1'
+and right(aracde,2)<>'99'
+and aracde not like '%Z%'
+and aracde not like '1T%'
+and aracde not like '1F%'
+and aracde not like '1W%'
+and aracde not like '1H%'
+and araname not like '%FIC%'
+)
+and a.agntnum=b.agntnum
+group by a.branch
+)d on a.branch=d.branch
+with ur;
+
+
+
+END P1@

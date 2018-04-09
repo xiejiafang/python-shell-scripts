@@ -1,0 +1,129 @@
+CREATE PROCEDURE p.GET_REPORT_BRANCH_QP()
+	DYNAMIC RESULT SETS 1
+P1: BEGIN
+	
+declare the_day int;
+declare the_yearmon int;
+declare the_beginday decimal(8,0);
+declare the_monenday decimal(8,0);
+
+set the_day=(values day(current date));
+--set the_beginday=(values year(current date))*10000+0101;
+
+if the_day=1 then
+set the_yearmon=(values year(current date - 1 months))*100+(values month(current date - 1 months));
+set the_beginday=(values year(current date - 1 months))*10000+(values month(current date - 1 months))*100+1;
+set the_monenday =(values year(current date - 1 months))*10000+(values month(current date - 1 months))*100+31;
+else
+set the_yearmon=(values year(current date))*100+(values month(current date));
+set the_beginday=(values year(current date))*10000+(values month(current date))*100+1;
+set the_monenday =(values year(current date))*10000+(values month(current date))*100+the_day-1;
+end if ;
+
+
+
+
+--11D04
+delete from administrator.hn_report_branch where report_no='11D04' and temp5=the_yearmon;
+
+--个险
+insert into administrator.hn_report_branch
+select a.branch,'11D04',coalesce(a.yc,0),coalesce(b.qp,0),coalesce(c.qp,0),0,the_yearmon from (
+select branch,count(agntnum)yc
+from administrator.hn_agntinfo
+where agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and dteapp<(the_yearmon*100+1) and dtetrm>=(the_yearmon*100+1)
+group by branch)a 
+left join(
+select x.branch,count(x.agntnum)qp
+from(
+select branch,agntnum,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and trandate between the_beginday and the_monenday
+and batctrcde<>'TGJC'
+group by branch,agntnum
+having sum(acctamt_std)>=1000
+)x group by x.branch
+)b on a.branch=b.branch
+left join(
+select x.branch,count(x.agntnum)qp
+from(
+select branch,agntnum,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and trandate between (the_beginday-10000) and (the_monenday-10000)
+and batctrcde<>'TGJC'
+group by branch,agntnum
+having sum(acctamt_std)>=1000
+)x group by x.branch
+)c on a.branch=c.branch;
+
+--营销
+insert into administrator.hn_report_branch
+select a.branch,'11D04',coalesce(a.yc,0),coalesce(b.qp,0),coalesce(c.qp,0),2,the_yearmon from (
+select branch,count(agntnum)yc
+from administrator.hn_agntinfo
+where agtype  in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+and dteapp<(the_yearmon*100+1) and dtetrm>=(the_yearmon*100+1)
+group by branch)a 
+left join(
+select x.branch,count(x.agntnum)qp
+from(
+select branch,agntnum,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+and trandate between the_beginday and the_monenday
+and batctrcde<>'TGJC'
+group by branch,agntnum
+having sum(acctamt_std)>=1000
+)x group by x.branch
+)b on a.branch=b.branch
+left join(
+select x.branch,count(x.agntnum)qp
+from(
+select branch,agntnum,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+and trandate between (the_beginday-10000) and (the_monenday-10000)
+and batctrcde<>'TGJC'
+group by branch,agntnum
+having sum(acctamt_std)>=1000
+)x group by x.branch
+)c on a.branch=c.branch;
+
+
+--收展
+insert into administrator.hn_report_branch
+select a.branch,'11D04',coalesce(a.yc,0),coalesce(b.qp,0),coalesce(c.qp,0),1,the_yearmon from (
+select branch,count(agntnum)yc
+from administrator.hn_agntinfo
+where agtype ='RC'
+and dteapp<(the_yearmon*100+1) and dtetrm>=(the_yearmon*100+1)
+group by branch)a 
+left join(
+select x.branch,count(x.agntnum)qp
+from(
+select branch,agntnum,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where agtype='RC'
+and trandate between the_beginday and the_monenday
+and batctrcde<>'TGJC'
+group by branch,agntnum
+having sum(acctamt_std)>=1000
+)x group by x.branch
+)b on a.branch=b.branch
+left join(
+select x.branch,count(x.agntnum)qp
+from(
+select branch,agntnum,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where agtype='RC'
+and trandate between (the_beginday-10000) and (the_monenday-10000)
+and batctrcde<>'TGJC'
+group by branch,agntnum
+having sum(acctamt_std)>=1000
+)x group by x.branch
+)c on a.branch=c.branch;
+
+END P1@

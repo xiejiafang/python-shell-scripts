@@ -1,0 +1,12 @@
+CREATE PROCEDURE p.run_cnt(in t_date date,mon decimal(3,0))
+P1: BEGIN
+	declare dateStart date;
+	set dateStart=t_date - mon months;
+        while t_date >= dateStart
+        do
+        	call p.get_cnt(t_date);
+        	call p.get_cnt_aracde(t_date);
+        	call p.get_cnt_part(t_date);
+        	set t_date = t_date - 1 month;
+        end while;
+END P1@

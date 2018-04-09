@@ -1,0 +1,49 @@
+CREATE PROCEDURE p.get_cnt_aracde(in t_date date)
+        DYNAMIC RESULT SETS 1
+P1: BEGIN
+
+        declare MonEnd decimal(8,0);
+        declare MonStart decimal(8,0);
+        declare Num integer;
+        declare Today decimal(8,0);
+
+        set t_date = t_date - 1 days;
+        SET MonStart = year(t_date)*10000+month(t_date)*100+01;
+        SET MonEnd = year(t_date)*10000+month(t_date)*100+day(t_date);
+        set Num = year(t_date)*100+month(t_date);
+        set Today = year(date(current timestamp))*10000+month(date(current timestamp))*100+day(date(current timestamp));
+
+
+        delete from administrator.hn_cnt_kpi_aracde where sort = 'GX' and month = Num;
+        insert into administrator.hn_cnt_kpi_aracde(branch,aracde,sort,month,cnttype,zbf,cnt_bf,zrl,cnt_rl,zjs,cnt_js,insert_date)
+        select a.branch,a.aracde,'GX',Num,c.cnttype,value(zbf,0),value(fbf,0),value(rl,0),value(hd,0),value(zjs,0),value(js,0),Today from
+        (select branch,aracde from administrator.hn_aracde where branch <> 'D') a left join
+        (select branch,aracde,sum(acctamt_std)zbf from administrator.part_cnt_kpi
+        where trandate between MonStart and MonEnd
+        group by branch,aracde) b on a.aracde=b.aracde left join
+
+        (select branch,aracde,cnttype,sum(acctamt_std)fbf from administrator.part_cnt_kpi
+        where trandate between MonStart and MonEnd
+        group by branch,aracde,cnttype)c on c.aracde=a.aracde left join
+        (select branch,aracde,count(distinct agntnum)rl from administrator.hn_agntinfo
+        where dteapp <=MonEnd and DTETRM >=MonStart
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch,aracde)d on a.aracde=d.aracde left join
+
+        (select branch,aracde,cnttype,count(distinct agntnum) hd from
+        (select branch,aracde,cnttype,agntnum from administrator.part_cnt_kpi
+        where trandate between MonStart and MonEnd
+        group by branch,aracde,agntnum,cnttype) a
+        group by branch,aracde,cnttype) e on c.cnttype=e.cnttype and e.aracde=a.aracde left join
+
+        (select branch,aracde,count(distinct chdrnum ) zjs
+        from administrator.part_cnt_kpi
+        where trandate between MonStart and MonEnd
+        group by branch,aracde)f on a.aracde=f.aracde left join
+
+        (select branch,aracde,cnttype,count(distinct chdrnum) js
+        from administrator.part_cnt_kpi
+        where trandate between MonStart and MonEnd
+        group by branch,aracde,cnttype)g on a.aracde=g.aracde and g.cnttype = c.cnttype;
+
+end P1@

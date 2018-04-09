@@ -1,0 +1,201 @@
+CREATE PROCEDURE p.GET_REPORT_STATION()
+P1: BEGIN
+declare today_date DATE;
+declare cur_date DATE;
+declare monst_dt date;
+DECLARE tran_date1 decimal(8,0);
+DECLARE tran_date2 decimal(8,0);
+DECLARE bef_day decimal(8,0); 
+DECLARE the_day decimal(8,0);
+
+declare today_date_his DATE;
+declare monst_dt_his date;
+DECLARE tran_date1_his decimal(8,0);
+DECLARE tran_date2_his decimal(8,0); 
+
+set cur_date = DATE(current timestamp);
+set today_date=(cur_date - 1 days);
+set bef_day = DAY(today_date);
+set monst_dt=(cur_date-bef_day days);
+set today_date_his = (today_date-1 years);
+set monst_dt_his = (monst_dt-1 years);
+
+set tran_date1 = YEAR(monst_dt)*10000+MONTH(monst_dt)*100+DAY(monst_dt);
+set tran_date2 = YEAR(today_date)*10000+MONTH(today_date)*100+DAY(today_date);
+set tran_date1_his = YEAR(monst_dt_his)*10000+MONTH(monst_dt_his)*100+DAY(monst_dt_his);
+set tran_date2_his = YEAR(today_date_his)*10000+MONTH(today_date_his)*100+DAY(today_date_his);
+
+set the_day = YEAR(cur_date)*10000+MONTH(cur_date)*100+DAY(cur_date);
+
+
+update administrator.hn_report_station set his='D' where ctime<=the_day;
+delete from administrator.hn_report_station where ctime=the_day;
+
+--insert 
+--业绩类：temp0：当前业绩；temp1:当前件数；temp2:同期业绩；temp3:同期件数
+--新单价值：temp0:当前新单；temp1:同期新单（除FIC外）
+--FIC新单：temp0:当前新单；temp1:同期新单；temp2:当前银保新单；temp3:同期银保新单
+
+
+--银保规模业绩、件数及同比
+insert into administrator.hn_report_station
+(station,flag,report_no,index_name,temp0,temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,ctime)
+SELECT A.STATION,'SQ0','12C01','GM',b.gm,b.js,c.tqgm,c.tqjs,0,0,0,0,0,0,the_day
+from(select branch,station,name from administrator.hn_branch where branch<>'D') A  Left Join
+( select a.STATION,  SUM(jf_je)/10000 GM,sum(case when jf_je>0 then 1 else -1 end)js
+  FROM ADMINISTRATOR.hn_basdata a, Administrator.agency B,administrator.hn_agency_group C
+  where app_flag in ('1' ,'WT')  AND JF_RQ BETWEEN  monst_dt AND today_date AND A.AGENCY_CODE=B.AGENCY_CODE AND B.agency_group=C.agency_group
+and c.agency_group  not in('08900069','08900070','08900071') GROUP BY a.STATION) b ON A.STATION=B.STATION
+left join
+( select a.STATION,  SUM(jf_je)/10000 tqGM,sum(case when jf_je>0 then 1 else -1 end)tqjs
+  FROM ADMINISTRATOR.hn_basdata a, Administrator.agency B,administrator.hn_agency_group C
+  where app_flag in ('1' ,'WT')  AND JF_RQ BETWEEN  monst_dt_his AND today_date_his AND A.AGENCY_CODE=B.AGENCY_CODE AND B.agency_group=C.agency_group
+and c.agency_group  not in('08900069','08900070','08900071') GROUP BY a.STATION) c ON A.STATION=c.STATION with ur;
+
+--银保首期期交业绩、件数及同比
+insert into administrator.hn_report_station
+(station,flag,report_no,index_name,temp0,temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,ctime)
+SELECT A.STATION,'SQ0','12C01','QJ',b.QJ,b.js,c.tqQJ,c.tqjs,0,0,0,0,0,0,the_day
+from(select branch,station,name from administrator.hn_branch where branch<>'D') A  Left Join
+( select a.STATION,  SUM(jf_je)/10000 QJ,sum(case when jf_je>0 then 1 else -1 end)js
+  FROM ADMINISTRATOR.hn_basdata a, Administrator.agency B,administrator.hn_agency_group C
+  where app_flag in ('1' ,'WT') AND jf_way = 12 AND JF_RQ BETWEEN  monst_dt AND today_date AND A.AGENCY_CODE=B.AGENCY_CODE AND B.agency_group=C.agency_group
+and c.agency_group  not in('08900069','08900070','08900071') GROUP BY a.STATION) b ON A.STATION=B.STATION
+left join
+( select a.STATION,  SUM(jf_je)/10000 tqQJ,sum(case when jf_je>0 then 1 else -1 end)tqjs
+  FROM ADMINISTRATOR.hn_basdata a, Administrator.agency B,administrator.hn_agency_group C
+  where app_flag in ('1' ,'WT') AND jf_way = 12  AND JF_RQ BETWEEN  monst_dt_his AND today_date_his AND A.AGENCY_CODE=B.AGENCY_CODE AND B.agency_group=C.agency_group
+and c.agency_group  not in('08900069','08900070','08900071') GROUP BY a.STATION) c ON A.STATION=c.STATION with ur;
+
+--银保首期幸福人生业绩、件数及同比
+insert into administrator.hn_report_station
+(station,flag,report_no,index_name,temp0,temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,ctime)
+SELECT A.STATION,'SQ0','12C01','XF',b.XF,b.js,c.tqXF,c.tqjs,0,0,0,0,0,0,the_day
+from(select branch,station,name from administrator.hn_branch where branch<>'D') A  Left Join
+( select a.STATION,  SUM(jf_je)/10000 XF,sum(case when jf_je>0 then 1 else -1 end)js
+  FROM ADMINISTRATOR.hn_basdata a, Administrator.agency B,administrator.hn_agency_group C
+  where app_flag in ('1' ,'WT') AND kinds='523' AND JF_RQ BETWEEN  monst_dt AND today_date AND A.AGENCY_CODE=B.AGENCY_CODE AND B.agency_group=C.agency_group
+and c.agency_group  not in('08900069','08900070','08900071') and LEFT(C.group_name,2)<>'XQ' GROUP BY a.STATION) b ON A.STATION=B.STATION
+left join
+( select a.STATION,  SUM(jf_je)/10000 tqXF,sum(case when jf_je>0 then 1 else -1 end)tqjs
+  FROM ADMINISTRATOR.hn_basdata a, Administrator.agency B,administrator.hn_agency_group C
+  where app_flag in ('1' ,'WT') AND kinds='523'  AND JF_RQ BETWEEN  monst_dt_his AND today_date_his AND A.AGENCY_CODE=B.AGENCY_CODE AND B.agency_group=C.agency_group
+and c.agency_group  not in('08900069','08900070','08900071') and LEFT(C.group_name,2)<>'XQ' GROUP BY a.STATION) c ON A.STATION=c.STATION with ur;
+
+--银保首期康悦业绩、件数及同比
+insert into administrator.hn_report_station
+(station,flag,report_no,index_name,temp0,temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,ctime)
+SELECT A.STATION,'SQ0','12C01','KY',b.bf,b.js,c.tqbf,c.tqjs,0,0,0,0,0,0,the_day
+from(select branch,station,name from administrator.hn_branch where branch<>'D') A  Left Join
+( select branch,sum(acctamt)/10000 bf,count(distinct a.chdrnum)js from administrator.hn_acctinfo a,administrator.hn_zcdrpf b,administrator.hn_agency c
+where a.chdrnum=b.chdrnum and b.reportag01=c.agency_code and trandate between tran_date1  AND tran_date2 and cnttype='AB8'
+and reportag01 not like '808%' and reportag01 not like '%A' and reportag01 not in('08120235','08190216') and reportag01 not like '%WY%'
+and agency_group not in('08900069','08900070','08900071') group by branch) b ON A.branch=B.branch
+left join
+( select branch,sum(acctamt)/10000 tqbf,count(distinct a.chdrnum)tqjs from administrator.hn_acctinfo a,administrator.hn_zcdrpf b,administrator.hn_agency c
+where a.chdrnum=b.chdrnum and b.reportag01=c.agency_code and trandate between tran_date1_his  AND tran_date2_his and cnttype='AB8'
+and reportag01 not like '808%' and reportag01 not like '%A' and reportag01 not in('08120235','08190216') and reportag01 not like '%WY%'
+and agency_group not in('08900069','08900070','08900071') group by branch) c ON A.branch=c.branch with ur;
+
+
+
+
+--银保续期幸福人生业绩、件数及同比
+insert into administrator.hn_report_station
+(station,flag,report_no,index_name,temp0,temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,ctime)
+SELECT A.STATION,'XQ0','12C01','XF',b.XF,b.js,c.tqXF,c.tqjs,0,0,0,0,0,0,the_day
+from(select branch,station,name from administrator.hn_branch where branch<>'D') A  Left Join
+( select a.STATION,  SUM(case when jf_way = 12 and jfyears>=5 then jf_je when jf_way=12 and jfyears<5 then jf_je*0.1*jfyears end)/10000 XF,sum(case when jf_je>0 then 1 else -1 end)js
+  FROM ADMINISTRATOR.hn_basdata a, Administrator.agency B,administrator.hn_agency_group C
+  where app_flag in ('1' ,'WT') AND kinds='523' AND JF_RQ BETWEEN  monst_dt AND today_date AND A.AGENCY_CODE=B.AGENCY_CODE AND B.agency_group=C.agency_group
+and LEFT(C.group_name,2)='XQ' GROUP BY a.STATION) b ON A.STATION=B.STATION
+left join
+( select a.STATION,  SUM(case when jf_way = 12 and jfyears>=5 then jf_je when jf_way=12 and jfyears<5 then jf_je*0.1*jfyears end)/10000 tqXF,sum(case when jf_je>0 then 1 else -1 end)tqjs
+  FROM ADMINISTRATOR.hn_basdata a, Administrator.agency B,administrator.hn_agency_group C
+  where app_flag in ('1' ,'WT') AND kinds='523'  AND JF_RQ BETWEEN  monst_dt_his AND today_date_his AND A.AGENCY_CODE=B.AGENCY_CODE AND B.agency_group=C.agency_group
+and LEFT(C.group_name,2)='XQ' GROUP BY a.STATION) c ON A.STATION=c.STATION with ur;
+
+--银保续期拓展业绩、件数及同比
+insert into administrator.hn_report_station
+(station,flag,report_no,index_name,temp0,temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,ctime)
+SELECT A.STATION,'XQ0','12C01','TZ',b.TZ,b.js,c.tqTZ,c.tqjs,0,0,0,0,0,0,the_day
+from(select branch,station,name from administrator.hn_branch where branch<>'D') A
+ Left Join
+ (select branch,sum(tz) tz,sum(js) js from
+ (SELECT BRANCH,SUM(case when PERIOD>=5 AND FREQ<>'S' then ACCTAMT else acctamt_std end)*1.00/10000 tz,
+ count(distinct chdrnum)js
+    FROM ADMINISTRATOR.HN_ACCTINFO
+   WHERE TRANDATE BETWEEN tran_date1  AND tran_date2  AND BATCTRCDE<>'TGJC' AND
+    AGTYPE IN ('BY','BZ') GROUP BY BRANCH
+    UNION
+    SELECT BRANCH,SUM(case when PERIOD>=5 AND FREQ<>'S' then ACCTAMT else acctamt_std end)*1.00/10000 tz,
+ count(distinct a.chdrnum)js
+    FROM ADMINISTRATOR.HN_ACCTINFO a ,administrator.hn_zcdrpf b
+   WHERE a.chdrnum=b.chdrnum and TRANDATE BETWEEN tran_date1  AND tran_date2  AND BATCTRCDE<>'TGJC' AND
+    cnttype IN('AB8','AD7') and (b.reportag01 like '808%' or  b.reportag01 like '%A') GROUP BY BRANCH)z group by branch)b ON A.BRANCH=b.BRANCH
+     Left Join
+ (select branch,sum(tz) tqtz,sum(js) tqjs from
+ (SELECT BRANCH,SUM(case when PERIOD>=5 AND FREQ<>'S' then ACCTAMT else acctamt_std end)*1.00/10000 tz,
+ count(distinct chdrnum)js
+    FROM ADMINISTRATOR.HN_ACCTINFO
+   WHERE TRANDATE BETWEEN tran_date1_his  AND tran_date2_his  AND BATCTRCDE<>'TGJC' AND
+    AGTYPE IN ('BY','BZ') GROUP BY BRANCH
+    UNION
+    SELECT BRANCH,SUM(case when PERIOD>=5 AND FREQ<>'S' then ACCTAMT else acctamt_std end)*1.00/10000 tz,
+ count(distinct a.chdrnum)js
+    FROM ADMINISTRATOR.HN_ACCTINFO a ,administrator.hn_zcdrpf b
+   WHERE a.chdrnum=b.chdrnum and TRANDATE BETWEEN tran_date1_his  AND tran_date2_his  AND BATCTRCDE<>'TGJC' AND
+    cnttype IN('AB8','AD7') and (b.reportag01 like '808%' or  b.reportag01 like '%A') GROUP BY BRANCH)z group by branch)c ON A.BRANCH=c.BRANCH
+     with ur;
+    
+--银保新单价值及同期
+insert into administrator.hn_report_station
+(station,flag,report_no,index_name,temp0,temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,ctime)
+SELECT A.STATION,'SQ0','12C01','XD',b.XD,c.tqXD,0,0,0,0,0,0,0,0,the_day
+from(select branch,station,name from administrator.hn_branch where branch<>'D') A
+ Left Join
+(select branch,sum(xdgx)xd from administrator.hn_xdgx a,administrator.hn_basdata b
+where prod_cat='BNK' and b.agency_group2  not in('08900069','08900070','08900071') AND trandate between tran_date1  AND tran_date2
+and app_flag in ('1','WT') and a.chdrnum=b.bm_cert and a.txn_amt=b.jf_je group by branch )b on b.branch=a.branch
+left join(
+select branch,sum(xdgx)tqxd from administrator.hn_xdgx a,administrator.hn_basdata b
+where prod_cat='BNK' AND trandate between tran_date1_his  AND tran_date2_his and app_flag in ('1','WT')
+and a.chdrnum=b.bm_cert and a.txn_amt=b.jf_je group by branch )c on a.branch=c.branch with ur;
+
+
+--拓展新单价值及同期
+insert into administrator.hn_report_station
+(station,flag,report_no,index_name,temp0,temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,ctime)
+SELECT A.STATION,'XQ0','12C01','XD',b.TZXD,c.tqTZXD,0,0,0,0,0,0,0,0,the_day
+from(select branch,station,name from administrator.hn_branch where branch<>'D') A
+ left join(select branch,sum(acctamt_std_a)tzxd from administrator.hn_acctinfo
+ where  trandate between tran_date1  AND tran_date2 and agtype in('BY','BZ','BA') and batctrcde<>'TGJC'
+ group by branch)b on a.branch=b.branch
+ left join(select branch,sum(acctamt_std_a)tqtzxd from administrator.hn_acctinfo
+ where  trandate between tran_date1_his  AND tran_date2_his and agtype in('BY','BZ','BA') and batctrcde<>'TGJC'
+ group by branch)c on a.branch=c.branch with ur;
+
+--FIC个险新单价值及同期
+insert into administrator.hn_report_station
+(station,flag,report_no,index_name,temp0,temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,ctime)
+SELECT '0800','FIC','12C01','XD',b.FICXD,c.tqFICXD,d.xd,e.tqxd,0,0,0,0,0,0,the_day
+from(select branch,station,name from administrator.hn_branch where branch='10') A
+ left join(select branch,sum(acctamt_std_a)FICXD from administrator.hn_acctinfo
+ where  trandate between tran_date1  AND tran_date2 and agtype in('BC','BD','BM','BP') and batctrcde<>'TGJC'
+ group by branch)b on a.branch=b.branch
+ left join(select branch,sum(acctamt_std_a)tqFICXD from administrator.hn_acctinfo
+ where  trandate between tran_date1_his  AND tran_date2_his and agtype in('BC','BD','BM','BP') and batctrcde<>'TGJC'
+ group by branch)c on a.branch=c.branch
+  Left Join
+  --FIC银保新单价值及同期
+(select branch,sum(xdgx)xd from administrator.hn_xdgx a,administrator.hn_basdata b
+where prod_cat='BNK' and b.agency_group2  in('08900069','08900070','08900071') AND trandate between tran_date1  AND tran_date2
+and app_flag in ('1','WT') and a.chdrnum=b.bm_cert and a.txn_amt=b.jf_je group by branch )d on d.branch=a.branch
+left join(
+select branch,sum(xdgx)tqxd from administrator.hn_xdgx a,administrator.hn_basdata b
+where prod_cat='BNK' AND b.agency_group2 in('08900069','08900070','08900071') and trandate between tran_date1_his  AND tran_date2_his and app_flag in ('1','WT')
+and a.chdrnum=b.bm_cert and a.txn_amt=b.jf_je group by branch )e on a.branch=e.branch with ur;
+ 
+ 
+
+END P1@

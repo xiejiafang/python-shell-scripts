@@ -1,0 +1,61 @@
+CREATE PROCEDURE p.get_cnt_part(in t_date date)
+        DYNAMIC RESULT SETS 1
+P1: BEGIN
+
+        declare MonEnd decimal(8,0);
+        declare MonStart decimal(8,0);
+        declare Num integer;
+        declare Today decimal(8,0);
+
+        set t_date = t_date - 1 days;
+        SET MonStart = year(t_date)*10000+month(t_date)*100+01;
+        SET MonEnd = year(t_date)*10000+month(t_date)*100+day(t_date);
+        set Num = year(t_date)*100+month(t_date);
+        set Today = year(date(current timestamp))*10000+month(date(current timestamp))*100+day(date(current timestamp));
+
+
+        delete from administrator.hn_cnt_kpi_part where sort = 'GX' and month = Num;
+        insert into administrator.hn_cnt_kpi_part(branch,aracde,partnum,partname,sort,month,cnttype,zbf,cnt_bf,zrl,cnt_rl,zjs,cnt_js,insert_date)
+        select a.branch,a.aracde,a.partnum,a.partname,'GX',Num,c.cnttype,value(zbf,0),value(fbf,0),value(rl,0),value(hd,0),value(zjs,0),value(js,0),Today from
+        (select distinct branch,aracde,case when partnum='' then 'nobody' else partnum end as partnum,
+        substr(case when partnum='' then 'nobody' else partname end,1,10) as partname from administrator.hn_agntinfo
+        where (parttype is null or parttype <> 'FM')) a left join
+        (select branch,aracde,case when partnum ='' then 'nobody' else partnum end as partnum,
+        sum(acctamt_std)zbf from administrator.part_cnt_kpi
+        where trandate between MonStart and MonEnd
+        group by branch,aracde,partnum) b on a.partnum=b.partnum and a.aracde = b.aracde left join
+
+        (select branch,aracde,case when partnum='' then 'nobody' else partnum end as partnum,cnttype,
+        sum(acctamt_std)fbf from administrator.part_cnt_kpi
+        where trandate between MonStart and MonEnd
+        group by branch,aracde,partnum,cnttype)c on c.partnum=a.partnum and c.aracde = a.aracde left join
+
+        (select branch,aracde,case when partnum='' then 'nobody' else partnum end as partnum,
+        count(distinct agntnum)rl from administrator.hn_agntinfo
+        where dteapp <=MonEnd and DTETRM >=MonStart
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch,aracde,partnum)d on a.partnum=d.partnum and a.aracde = d.aracde left join
+
+        (select branch,aracde,cnttype,case when partnum='' then 'nobody' else partnum end as partnum,
+        count(distinct agntnum) hd from
+        (select branch,aracde,partnum,cnttype,agntnum from administrator.part_cnt_kpi
+        where trandate between MonStart and MonEnd
+        group by branch,aracde,agntnum,partnum,cnttype) a
+        group by branch,aracde,partnum,cnttype) e on c.cnttype=e.cnttype and e.partnum=c.partnum
+        and e.aracde = c.aracde left join
+
+        (select branch,aracde,case when partnum='' then 'nobody' else partnum end as partnum,
+        count(distinct chdrnum) zjs
+        from administrator.part_cnt_kpi
+        where trandate between MonStart and MonEnd
+        group by branch,aracde,partnum)f on c.partnum=f.partnum and c.aracde = f.aracde left join
+
+        (select distinct branch,aracde,cnttype,
+        case when partnum='' then 'nobody' else partnum end as partnum,
+        count(distinct chdrnum ) js
+        from administrator.part_cnt_kpi
+        where trandate between MonStart and MonEnd
+        group by branch,aracde,cnttype,partnum)g
+        on c.partnum=g.partnum and g.cnttype = c.cnttype and c.aracde = g.aracde;
+
+end P1@

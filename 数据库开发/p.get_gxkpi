@@ -1,0 +1,315 @@
+CREATE PROCEDURE p.get_gxkpi(in t_date date)
+        DYNAMIC RESULT SETS 1
+P1: BEGIN
+
+        declare MonEnd decimal(8,0);
+        declare MonStart decimal(8,0);
+        declare LastMonStart decimal(8,0);
+        declare LastMonEnd decimal(8,0);
+        declare Num integer;
+        declare Today decimal(8,0);
+        declare t_date_other date;
+
+        declare o_MonEnd decimal(8,0);
+        declare o_MonStart decimal(8,0);
+        declare o_LastMonStart decimal(8,0);
+        declare o_LastMonEnd decimal(8,0);
+
+
+        declare mon_num1 decimal(8,0);
+        declare mon_num2 decimal(8,0);
+        declare day1 decimal(8,0);
+        declare day2 decimal(8,0);
+        declare day3 decimal(8,0);
+        declare day4 decimal(8,0);
+
+        declare l_mon_num1 decimal(8,0);
+        declare l_mon_num2 decimal(8,0);
+        declare l_day1 decimal(8,0);
+        declare l_day2 decimal(8,0);
+        declare l_day3 decimal(8,0);
+        declare l_day4 decimal(8,0);
+
+        set t_date = t_date - 1 days;
+        if t_date = '2013-2-28'  then
+                SET MonEnd = year(t_date)*10000+month(t_date)*100+30;
+        else
+                SET MonEnd = year(t_date)*10000+month(t_date)*100+day(t_date);
+        end if;
+
+        SET MonStart = year(t_date)*10000+month(t_date)*100+01;
+        SET LastMonStart = MonStart - 10000;
+        SET LastMonEnd = MonEnd -10000;
+        set Num = year(t_date)*100+month(t_date);
+        set Today = year(date(current timestamp))*10000+month(date(current timestamp))*100+day(date(current timestamp));
+
+
+        delete from administrator.hn_gxkpi where sort = 'GX' and kpi_name = 'GM' and month = Num;
+
+        insert into administrator.hn_gxkpi(branch,sort,month,kpi_name,lastyear,thisyear,insert_date)
+        select a.branch,'GX',Num,'GM',value(b.gm,0),value(c.gm,0),Today from administrator.hn_branch a left join
+        (select branch,sum(acctamt)gm from administrator.hn_acctinfo
+        where trandate between LastMonStart and LastMonEnd and batctrcde<>'TGJC'
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch) b on a.branch = b.branch left join
+        (select branch,sum(acctamt)gm from administrator.hn_acctinfo
+        where trandate between MonStart and MonEnd and batctrcde<>'TGJC'
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch) c on a.branch = c.branch
+        where a.branch <> 'D';
+
+
+        delete from administrator.hn_gxkpi where sort = 'GX' and kpi_name = 'BB' and month = Num;
+
+        insert into administrator.hn_gxkpi(branch,sort,month,kpi_name,lastyear,thisyear,insert_date)
+        select a.branch,'GX',Num,'BB',value(b.gm,0),value(c.gm,0),Today from administrator.hn_branch a left join
+        (select branch,sum(acctamt_std)gm from administrator.hn_acctinfo
+        where trandate between LastMonStart and LastMonEnd and batctrcde<>'TGJC'
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch) b on a.branch = b.branch left join
+        (select branch,sum(acctamt_std)gm from administrator.hn_acctinfo
+        where trandate between MonStart and MonEnd and batctrcde<>'TGJC'
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch) c on a.branch = c.branch
+        where a.branch <> 'D';
+
+
+        delete from administrator.hn_gxkpi where sort = 'GX' and kpi_name = 'RL' and month = Num;
+        insert into administrator.hn_gxkpi(branch,sort,month,kpi_name,lastyear,thisyear,insert_date)
+        select a.branch,'GX',Num,'RL',value(b.rl,0),value(c.rl,0),Today from administrator.hn_branch a left join
+        (select branch,count(distinct agntnum)rl from administrator.hn_agntinfo
+        where dteapp <=LastMonEnd and DTETRM >LastMonEnd
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch) b on a.branch = b.branch left join
+        (select branch,count(distinct agntnum)rl from administrator.hn_agntinfo
+        where dteapp <=MonEnd and DTETRM >MonEnd
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch) c on a.branch = c.branch
+        where a.branch <> 'D';
+
+
+
+        delete from administrator.hn_gxkpi where sort = 'GX' and kpi_name = 'YCRL' and month = Num;
+        insert into administrator.hn_gxkpi(branch,sort,month,kpi_name,lastyear,thisyear,insert_date)
+        select a.branch,'GX',Num,'YCRL',value(b.rl,0),value(c.rl,0),Today from administrator.hn_branch a left join
+        (select branch,count(distinct agntnum)rl from administrator.hn_agntinfo
+        where dteapp <=LastMonEnd and DTETRM >=LastMonStart
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch) b on a.branch = b.branch left join
+        (select branch,count(distinct agntnum)rl from administrator.hn_agntinfo
+        where dteapp <=MonEnd and DTETRM >=MonStart
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch) c on a.branch = c.branch
+        where a.branch <> 'D';
+
+        delete from administrator.hn_gxkpi where sort = 'GX' and kpi_name = 'HD' and month = Num;
+        insert into administrator.hn_gxkpi(branch,sort,month,kpi_name,lastyear,thisyear,insert_date)
+        select a.branch,'GX',Num,'HD',value(b.hd,0),value(c.hd,0),Today from administrator.hn_branch a left join
+        (select branch,count(agntnum) hd from
+        (select distinct branch,agntnum from administrator.hn_acctinfo
+        where trandate between LastMonStart and LastMonEnd and batctrcde<>'TGJC'
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch,agntnum having sum(acctamt_std)>0) a group by branch) b on a.branch = b.branch left join
+        (select branch,count(agntnum) hd from
+        (select distinct branch,agntnum from administrator.hn_acctinfo
+        where trandate between MonStart and MonEnd and batctrcde<>'TGJC'
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch,agntnum having sum(acctamt_std)>0)a group by branch) c on a.branch = c.branch
+        where a.branch <> 'D';
+
+
+
+        delete from administrator.hn_gxkpi where sort = 'GX' and kpi_name = '1000P' and month = Num;
+        insert into administrator.hn_gxkpi(branch,sort,month,kpi_name,lastyear,thisyear,insert_date)
+        select a.branch,'GX',Num,'1000P',value(b.hd,0),value(c.hd,0),Today from administrator.hn_branch a left join
+        (select branch,count(agntnum) hd from
+        (select distinct branch,agntnum from administrator.hn_acctinfo
+        where trandate between LastMonStart and LastMonEnd and batctrcde<>'TGJC'
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch,agntnum having sum(acctamt_std)>=1000)a group by branch) b on a.branch = b.branch left join
+        (select branch,count(agntnum) hd from
+        (select distinct branch,agntnum from administrator.hn_acctinfo
+        where trandate between MonStart and MonEnd and batctrcde<>'TGJC'
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch,agntnum having sum(acctamt_std)>=1000)a group by branch) c on a.branch = c.branch
+        where a.branch <> 'D';
+
+
+
+        delete from administrator.hn_gxkpi where sort = 'GX' and kpi_name = 'SQP' and month = Num;
+        insert into administrator.hn_gxkpi(branch,sort,month,kpi_name,lastyear,thisyear,insert_date)
+        select a.branch,'GX',Num,'SQP',value(b.hd,0),value(c.hd,0),Today from administrator.hn_branch a left join
+        (select branch,count(agntnum) hd from
+        (select distinct branch,agntnum from administrator.hn_acctinfo
+        where trandate between LastMonStart and LastMonEnd and batctrcde<>'TGJC'
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch,agntnum having sum(acctamt_std)>=3000)a group by branch) b on a.branch = b.branch left join
+        (select branch,count(agntnum) hd from
+        (select distinct branch,agntnum from administrator.hn_acctinfo
+        where trandate between MonStart and MonEnd and batctrcde<>'TGJC'
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch,agntnum having sum(acctamt_std)>=3000)a group by branch) c on a.branch = c.branch
+        where a.branch <> 'D';
+
+
+
+        delete from administrator.hn_gxkpi where sort = 'GX' and kpi_name = 'WP' and month = Num;
+        insert into administrator.hn_gxkpi(branch,sort,month,kpi_name,lastyear,thisyear,insert_date)
+        select a.branch,'GX',Num,'WP',value(b.hd,0),value(c.hd,0),Today from administrator.hn_branch a left join
+        (select branch,count(agntnum) hd from
+        (select distinct branch,agntnum from administrator.hn_acctinfo
+        where trandate between LastMonStart and LastMonEnd and batctrcde<>'TGJC'
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch,agntnum having sum(acctamt_std)>=10000)a group by branch) b on a.branch = b.branch left join
+        (select branch,count(agntnum) hd from
+        (select distinct branch,agntnum from administrator.hn_acctinfo
+        where trandate between MonStart and MonEnd and batctrcde<>'TGJC'
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch,agntnum having sum(acctamt_std)>=10000)a group by branch) c on a.branch = c.branch
+        where a.branch <> 'D';
+
+	--20140620添加2万P
+        delete from administrator.hn_gxkpi where sort = 'GX' and kpi_name = '2WP' and month = Num;
+        insert into administrator.hn_gxkpi(branch,sort,month,kpi_name,lastyear,thisyear,insert_date)
+        select a.branch,'GX',Num,'2WP',value(b.hd,0),value(c.hd,0),Today from administrator.hn_branch a left join
+        (select branch,count(agntnum) hd from
+        (select distinct branch,agntnum from administrator.hn_acctinfo
+        where trandate between LastMonStart and LastMonEnd and batctrcde<>'TGJC'
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch,agntnum having sum(acctamt_std)>=20000)a group by branch) b on a.branch = b.branch left join
+        (select branch,count(agntnum) hd from
+        (select distinct branch,agntnum from administrator.hn_acctinfo
+        where trandate between MonStart and MonEnd and batctrcde<>'TGJC'
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch,agntnum having sum(acctamt_std)>=20000)a group by branch) c on a.branch = c.branch
+        where a.branch <> 'D';
+
+
+        delete from administrator.hn_gxkpi where sort = 'GX' and kpi_name = 'JS' and month = Num;
+        insert into administrator.hn_gxkpi(branch,sort,month,kpi_name,lastyear,thisyear,insert_date)
+        select a.branch,'GX',Num,'JS',value(b.js,0),value(c.js,0),Today from administrator.hn_branch a left join
+        (select branch,(count(distinct case when batc_type = 'CB' then chdrnum end)-
+        count(distinct case when  batc_type = 'CD' then chdrnum end)) js
+        from administrator.hn_acctinfo
+        where trandate between LastMonStart and LastMonEnd and batctrcde<>'TGJC'
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch) b on a.branch = b.branch left join
+        (select branch,(count(distinct case when batc_type = 'CB' then chdrnum end)-
+        count(distinct case when  batc_type = 'CD' then chdrnum end)) js
+        from administrator.hn_acctinfo
+        where trandate between MonStart and MonEnd and batctrcde<>'TGJC'
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch) c on a.branch = c.branch
+        where a.branch <> 'D';
+
+
+
+
+        set t_date_other = t_date - 12 month;
+        SET o_MonEnd = year(t_date_other)*10000+month(t_date_other)*100+day(t_date_other);
+        SET o_MonStart = year(t_date_other)*10000+month(t_date_other)*100+01;
+        SET o_LastMonStart = o_MonStart - 10000;
+        SET o_LastMonEnd = o_MonEnd -10000;
+
+        delete from administrator.hn_gxkpi where sort = 'GX' and kpi_name = 'LCXR' and month = Num;
+        insert into administrator.hn_gxkpi(branch,sort,month,kpi_name,lastyear,thisyear,insert_date)
+        select a.branch,'GX',Num,'LCXR',value(b.rl,0),value(c.rl,0),Today from administrator.hn_branch a left join
+        (select branch,count(distinct agntnum)rl from administrator.hn_agntinfo
+        where dteapp between o_LastMonStart and o_LastMonEnd
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch) b on a.branch = b.branch left join
+        (select branch,count(distinct agntnum)rl from administrator.hn_agntinfo
+        where dteapp between o_MonStart and o_MonEnd
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch) c on a.branch = c.branch
+        where a.branch <> 'D';
+
+
+
+        delete from administrator.hn_gxkpi where sort = 'GX' and kpi_name = 'LCRL' and month = Num;
+        insert into administrator.hn_gxkpi(branch,sort,month,kpi_name,lastyear,thisyear,insert_date)
+        select a.branch,'GX',Num,'LCRL',value(b.rl,0),value(c.rl,0),Today from administrator.hn_branch a left join
+        (select branch,count(distinct agntnum)rl from administrator.hn_agntinfo
+        where dteapp between o_LastMonStart and o_LastMonEnd and dtetrm >LastMonEnd
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch) b on a.branch = b.branch left join
+        (select branch,count(distinct agntnum)rl from administrator.hn_agntinfo
+        where dteapp between o_MonStart and o_MonEnd  and dtetrm >MonEnd
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch) c on a.branch = c.branch
+        where a.branch <> 'D';
+
+
+        delete from administrator.hn_gxkpi where sort = 'GX' and kpi_name = 'ZG' and month = Num;
+        insert into administrator.hn_gxkpi(branch,sort,month,kpi_name,lastyear,thisyear,insert_date)
+        select a.branch,'GX',Num,'ZG',value(b.rl,0),value(c.rl,0),Today from administrator.hn_branch a left join
+        (select branch,count(distinct agntnum)rl from administrator.hn_agntinfo
+        where dteapp <=LastMonEnd and DTETRM >=LastMonStart
+        and (agtype in('AS','SS','UM','AD') or agntnum in (select zcllctor from administrator.hn_zcllinfo where
+        ZCLLCLS in('SZC1','SZC2','SZC3','SZD1','SZD2','SZD3','CA11','CS11','CA12','CS12','CA13','CS13',
+        'CA14','CS14','CA15','CS15','CA16','CS16')))
+        group by branch) b on a.branch = b.branch left join
+        (select branch,count(distinct agntnum)rl from administrator.hn_agntinfo
+        where dteapp <=MonEnd and DTETRM >=MonStart
+        and (agtype in('AS','SS','UM','AD') or agntnum in (select zcllctor from administrator.hn_zcllinfo where
+        ZCLLCLS in('SZC1','SZC2','SZC3','SZD1','SZD2','SZD3','CA11','CS11','CA12','CS12','CA13','CS13',
+        'CA14','CS14','CA15','CS15','CA16','CS16')))
+        group by branch) c on a.branch = c.branch
+        where a.branch <> 'D';
+
+
+
+        delete from administrator.hn_gxkpi where sort = 'GX' and kpi_name = 'ZGZY' and month = Num;
+        insert into administrator.hn_gxkpi(branch,sort,month,kpi_name,lastyear,thisyear,insert_date)
+        select a.branch,'GX',Num,'ZGZY',value(b.rl,0),value(c.rl,0),Today from administrator.hn_branch a left join
+        (select b.branch,count(distinct b.agntnum) rl from
+        administrator.hn_agntinfo a,administrator.hn_agntinfo b
+        where a.dteapp between LastMonStart and LastMonEnd
+        and a.agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        and a.ZRECRUIT = b.agntnum and (b.agtype in('AS','SS','UM','AD') or b.agntnum in (select zcllctor from administrator.hn_zcllinfo where
+        ZCLLCLS in('SZC1','SZC2','SZC3','SZD1','SZD2','SZD3','CA11','CS11','CA12','CS12','CA13','CS13',
+        'CA14','CS14','CA15','CS15','CA16','CS16'))) group by b.branch
+        ) b on a.branch = b.branch left join
+        (select b.branch,count(distinct b.agntnum) rl from
+        administrator.hn_agntinfo a,administrator.hn_agntinfo b
+        where a.dteapp between MonStart and MonEnd
+        and a.agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        and a.ZRECRUIT = b.agntnum and (b.agtype in('AS','SS','UM','AD') or b.agntnum in (select zcllctor from administrator.hn_zcllinfo where
+        ZCLLCLS in('SZC1','SZC2','SZC3','SZD1','SZD2','SZD3','CA11','CS11','CA12','CS12','CA13','CS13',
+        'CA14','CS14','CA15','CS15','CA16','CS16'))) group by b.branch) c on a.branch = c.branch
+        where a.branch <> 'D';
+
+
+        delete from administrator.hn_gxkpi where sort = 'GX' and kpi_name = 'DYRS' and month = Num;
+        insert into administrator.hn_gxkpi(branch,sort,month,kpi_name,lastyear,thisyear,insert_date)
+        select a.branch,'GX',Num,'DYRS',value(b.rl,0),value(c.rl,0),Today from administrator.hn_branch a left join
+        (select branch,count(distinct agntnum) rl from administrator.hn_agntinfo
+        where dteapp between LastMonStart and LastMonEnd
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch) b on a.branch = b.branch left join
+        (select branch,count(distinct agntnum) rl from administrator.hn_agntinfo
+        where dteapp between MonStart and MonEnd
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch) c on a.branch = c.branch
+        where a.branch <> 'D';
+
+
+
+
+        delete from administrator.hn_gxkpi where sort = 'GX' and kpi_name = 'ZZXZ' and month = Num;
+        insert into administrator.hn_gxkpi(branch,sort,month,kpi_name,lastyear,thisyear,insert_date)
+	select branch,'GX',month,kpi_name,sum(lastyear),sum(thisyear),Today
+	from administrator.hn_gxkpi where  kpi_name = 'ZZXZ'
+	and month = Num and sort in('YX','SZ')
+	group by branch,'GX',month,kpi_name;
+
+
+        delete from administrator.hn_gxkpi where sort = 'GX' and kpi_name = 'ZZRL' and month = Num;
+        insert into administrator.hn_gxkpi(branch,sort,month,kpi_name,lastyear,thisyear,insert_date)
+  	select branch,'GX',month,kpi_name,sum(lastyear),sum(thisyear),Today
+	from administrator.hn_gxkpi where  kpi_name = 'ZZRL'
+	and month = Num and sort in('YX','SZ')
+	group by branch,'GX',month,kpi_name;
+
+END P1@
+

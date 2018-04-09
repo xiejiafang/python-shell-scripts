@@ -1,0 +1,15 @@
+CREATE  PROCEDURE p.RUN_KPI(in t_date date,in s_date date)
+        DYNAMIC RESULT SETS 1
+P1:
+BEGIN
+        while t_date >= s_date
+        do
+        	call p.get_gxkpi(t_date);
+        	call p.get_yxkpi(t_date);
+        	call p.get_szkpi(t_date);
+        	call p.get_gxkpi_aracde(t_date);
+        	call p.get_yxkpi_aracde(t_date);
+        	call p.get_szkpi_aracde(t_date);
+        	set t_date = t_date - 1 month;
+        end while;
+END P1@

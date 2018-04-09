@@ -1,0 +1,313 @@
+CREATE PROCEDURE p.GET_REPORT_CQBB (  )
+	DYNAMIC RESULT SETS 1
+------------------------------------------------------------------------
+-- SQL Stored Procedure 
+------------------------------------------------------------------------
+
+BEGIN
+	
+declare the_date date;	
+declare the_mon int;
+declare the_beginday int;
+declare the_monenday int;
+declare the_bf_beginday int;
+declare the_bf_monenday int;
+
+set the_date=(values (current date - 1 days));
+set the_mon=(values year(the_date))*100+(values month(the_date));
+set the_beginday =(values year(the_date))*10000+(values month(the_date))*100+01;
+set the_monenday =(values year(the_date))*10000+(values month(the_date))*100+31;
+set the_bf_beginday =the_beginday-10000;
+set the_bf_monenday =the_monenday-10000;
+
+
+
+delete from administrator.hn_report_cqbb where make=the_mon;
+
+--营销
+insert into administrator.hn_report_cqbb
+select a.zz,a.aracde,a.shortname,
+coalesce(b.js,0),coalesce(b.bf,0),
+coalesce(bb.js,0),coalesce(bb.bf,0),
+coalesce(c.zjs,0),coalesce(c.yx,0),coalesce(c.yxj,0),
+coalesce(c.cdjs,0),coalesce(c.cd,0),coalesce(c.cdj,0),
+coalesce(d.rs,0)+coalesce(h.xz,0),coalesce(e.pl,0),coalesce(e.qp,0),
+coalesce(f.bb,0),coalesce(g.bb,0),
+'Y',the_mon from (
+select administrator.getbranchname(a.branch) zz,a.aracde,a.shortname
+from ADMINISTRATOR.HN_aracde a  where cityflag='Y' and validflag='1'
+) a
+left join
+(select c.aracde,count(a.chdrnum)js,sum(a.acctamt)bf
+from administrator.hn_chdrslinfo a,administrator.hn_chdrinfo b,administrator.hn_agntinfo c
+where a.hprrcvdt between the_beginday and the_monenday
+and c.aracde in(select aracde from ADMINISTRATOR.HN_aracde where cityflag='Y' and validflag='1')
+and c.agtype in ('TS','TA','SA','SM','SD','AS','SS','UM','AD','SE','HD')
+and a.chdrnum=b.chdrnum and b.agntnum=c.agntnum
+group by c.aracde
+)b on a.aracde=b.aracde
+left join
+(
+select aracde,count(distinct chdrnum)js,sum(acctamt)bf
+from administrator.hn_rtrninfo
+where  trandate between the_beginday and the_monenday
+and agtype in ('TS','TA','SA','SM','SD','AS','SS','UM','AD','SE','HD')
+and aracde in(select aracde from ADMINISTRATOR.HN_aracde where cityflag='Y' and validflag='1')
+group by aracde
+) bb on a.aracde=bb.aracde
+left join
+(
+select aracde,
+count(distinct case when batc_type='CB' then chdrnum end)zjs,
+sum(case when batc_type<>'CD' then acctamt_std  else 0 end )yx,
+sum(case when batc_type<>'CD' then acctamt_std_a  else 0 end)yxj,
+count(distinct case when batc_type='CD' then chdrnum end)cdjs,
+sum(case when batc_type='CD' then acctamt_std else 0 end )cd,
+sum(case when batc_type='CD' then acctamt_std_a else 0 end)cdj
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype in ('TS','TA','SA','SM','SD','AS','SS','UM','AD','SE','HD')
+and batctrcde<>'TGJC'
+and aracde in(select aracde from ADMINISTRATOR.HN_aracde where cityflag='Y' and validflag='1')
+group by aracde
+)c on a.aracde=c.aracde
+left join(
+select aracde,count(agntnum)rs
+from administrator.hn_agntinfo
+where dteapp<the_beginday and dtetrm>=the_beginday
+and agtype in ('TS','TA','SA','SM','SD','AS','SS','UM','AD','SE','HD')
+and aracde in(select aracde from ADMINISTRATOR.HN_aracde where cityflag='Y' and validflag='1')
+group by aracde
+)d on a.aracde=d.aracde
+left join(
+select x.aracde,count(x.agntnum)pl,count(case when x.bb>=1000 then x.agntnum end)qp
+from(
+select aracde,agntnum,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype in ('TS','TA','SA','SM','SD','AS','SS','UM','AD','SE','HD')
+and batctrcde<>'TGJC'
+and aracde in(select aracde from ADMINISTRATOR.HN_aracde where cityflag='Y' and validflag='1')
+group by aracde,agntnum
+having sum(acctamt_std)>0
+)x group by x.aracde
+)e on a.aracde=e.aracde
+left join(
+select aracde,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype in ('TS','TA','SA','SM','SD','AS','SS','UM','AD','SE','HD')
+and batctrcde<>'TGJC'
+and aracde in(select aracde from ADMINISTRATOR.HN_aracde where cityflag='Y' and validflag='1')
+group by aracde
+)f on a.aracde=f.aracde
+left join(
+select aracde,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday
+and agtype in ('TS','TA','SA','SM','SD','AS','SS','UM','AD','SE','HD')
+and batctrcde<>'TGJC'
+and aracde in(select aracde from ADMINISTRATOR.HN_aracde where cityflag='Y' and validflag='1')
+group by aracde
+)g on a.aracde=g.aracde
+left join(
+select aracde,count(agntnum)xz
+from administrator.hn_agntinfo
+where dteapp between the_beginday and the_monenday
+and agtype in ('TS','TA','SA','SM','SD','AS','SS','UM','AD','SE','HD')
+and aracde in(select aracde from ADMINISTRATOR.HN_aracde where cityflag='Y' and validflag='1')
+group by aracde
+)h on a.aracde=h.aracde
+with ur;
+
+----RC
+
+insert into administrator.hn_report_cqbb
+select a.zz,a.aracde,a.shortname,coalesce(b.js,0),coalesce(b.bf,0),
+coalesce(bb.js,0),coalesce(bb.bf,0),
+coalesce(c.zjs,0),coalesce(c.yx,0),coalesce(c.yxj,0),
+coalesce(c.cdjs,0),coalesce(c.cd,0),coalesce(c.cdj,0),
+coalesce(d.rs,0)+coalesce(h.xz,0),coalesce(e.pl,0),coalesce(e.qp,0),
+coalesce(f.bb,0),coalesce(g.bb,0),'S',the_mon from (
+select administrator.getbranchname(a.branch) zz,a.aracde,a.shortname
+from ADMINISTRATOR.HN_aracde a  where (cityflag='M' or aracde = '002') and validflag='1'
+) a
+left join
+(select c.aracde,count(a.chdrnum)js,sum(a.acctamt)bf
+from administrator.hn_chdrslinfo a,administrator.hn_chdrinfo b,administrator.hn_agntinfo c
+where a.hprrcvdt between the_beginday and the_monenday
+and c.aracde in(select aracde from ADMINISTRATOR.HN_aracde where (cityflag='M' or aracde = '002') and validflag='1')
+and c.agtype='RC'
+and a.chdrnum=b.chdrnum and b.agntnum=c.agntnum
+group by c.aracde
+)b on a.aracde=b.aracde
+left join
+(
+select aracde,count(distinct chdrnum)js,sum(acctamt)bf
+from administrator.hn_rtrninfo
+where  trandate between the_beginday and the_monenday
+and agtype='RC'
+and aracde in(select aracde from ADMINISTRATOR.HN_aracde where (cityflag='M' or aracde = '002') and validflag='1')
+group by aracde
+) bb on a.aracde=bb.aracde
+left join
+(
+select aracde,
+count(distinct case when batc_type = 'CB' then chdrnum end)zjs,
+sum(case when batc_type<>'CD' then acctamt_std  else 0 end )yx,
+sum(case when batc_type<>'CD' then acctamt_std_a  else 0 end)yxj,
+count(distinct case when batc_type='CD' then chdrnum end)cdjs,
+sum(case when batc_type='CD' then acctamt_std else 0 end )cd,
+sum(case when batc_type='CD' then acctamt_std_a else 0 end)cdj
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype ='RC'
+and batctrcde<>'TGJC'
+and aracde in(select aracde from ADMINISTRATOR.HN_aracde where (cityflag='M' or aracde = '002') and validflag='1')
+group by aracde
+)c on a.aracde=c.aracde
+left join(
+select aracde,count(agntnum)rs
+from administrator.hn_agntinfo
+where dteapp<the_beginday  and dtetrm>=the_beginday 
+and agtype ='RC'
+and aracde in(select aracde from ADMINISTRATOR.HN_aracde where (cityflag='M' or aracde = '002') and validflag='1')
+group by aracde
+)d on a.aracde=d.aracde
+left join(
+select x.aracde,count(x.agntnum)pl,count(case when x.bb>=1000 then x.agntnum end)qp
+from(
+select aracde,agntnum,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype='RC'
+and batctrcde<>'TGJC'
+and aracde in(select aracde from ADMINISTRATOR.HN_aracde where (cityflag='M' or aracde = '002') and validflag='1')
+group by aracde,agntnum
+having sum(acctamt_std)>0
+)x group by x.aracde
+)e on a.aracde=e.aracde
+left join(
+select aracde,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype ='RC'
+and batctrcde<>'TGJC'
+and aracde in(select aracde from ADMINISTRATOR.HN_aracde where (cityflag='M' or aracde = '002') and validflag='1')
+group by aracde
+)f on a.aracde=f.aracde
+left join(
+select aracde,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday
+and agtype ='RC'
+and batctrcde<>'TGJC'
+and aracde in(select aracde from ADMINISTRATOR.HN_aracde where (cityflag='M' or aracde = '002') and validflag='1')
+group by aracde
+)g on a.aracde=g.aracde
+left join(
+select aracde,count(agntnum)xz
+from administrator.hn_agntinfo
+where dteapp between the_beginday and the_monenday
+and agtype ='RC'
+and aracde in(select aracde from ADMINISTRATOR.HN_aracde where (cityflag='M' or aracde = '002') and validflag='1')
+group by aracde
+)h on a.aracde=h.aracde
+with ur;
+
+-----个险
+insert into administrator.hn_report_cqbb
+select a.zz,a.aracde,a.shortname,coalesce(b.js,0),coalesce(b.bf,0),
+coalesce(bb.js,0),coalesce(bb.bf,0),
+coalesce(c.zjs,0),coalesce(c.yx,0),coalesce(c.yxj,0),
+coalesce(c.cdjs,0),coalesce(c.cd,0),coalesce(c.cdj,0),
+coalesce(d.rs,0)+coalesce(h.xz,0),coalesce(e.pl,0),coalesce(e.qp,0),
+coalesce(f.bb,0),coalesce(g.bb,0),'G',the_mon from (
+select administrator.getbranchname(a.branch) zz,a.aracde,a.shortname
+from ADMINISTRATOR.HN_aracde a  where cityflag IN('Y','M') and validflag='1'
+) a
+left join
+(select c.aracde,count(a.chdrnum)js,sum(a.acctamt)bf
+from administrator.hn_chdrslinfo a,administrator.hn_chdrinfo b,administrator.hn_agntinfo c
+where a.hprrcvdt between the_beginday and the_monenday
+and c.aracde in(select aracde from ADMINISTRATOR.HN_aracde where cityflag IN('Y','M') and validflag='1')
+and c.agtype in ('TS','TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and a.chdrnum=b.chdrnum and b.agntnum=c.agntnum
+group by c.aracde
+)b on a.aracde=b.aracde
+left join
+(
+select aracde,count(distinct chdrnum)js,sum(acctamt)bf
+from administrator.hn_rtrninfo
+where  trandate between the_beginday and the_monenday
+and agtype in ('TS','TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and aracde in(select aracde from ADMINISTRATOR.HN_aracde where cityflag IN('Y','M') and validflag='1')
+group by aracde
+) bb on a.aracde=bb.aracde
+left join
+(
+select aracde,
+count(distinct case when batc_type='CB' then chdrnum end)zjs,
+sum(case when batc_type<>'CD' then acctamt_std  else 0 end )yx,
+sum(case when batc_type<>'CD' then acctamt_std_a  else 0 end)yxj,
+count(distinct case when batc_type='CD' then chdrnum end)cdjs,
+sum(case when batc_type='CD' then acctamt_std else 0 end )cd,
+sum(case when batc_type='CD' then acctamt_std_a else 0 end)cdj
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype in ('TS','TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and batctrcde<>'TGJC'
+and aracde in(select aracde from ADMINISTRATOR.HN_aracde where cityflag IN('Y','M') and validflag='1')
+group by aracde
+)c on a.aracde=c.aracde
+left join(
+select aracde,count(agntnum)rs
+from administrator.hn_agntinfo
+where dteapp<the_beginday  and dtetrm>=the_beginday
+and agtype in ('TS','TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and aracde in(select aracde from ADMINISTRATOR.HN_aracde where cityflag IN('Y','M') and validflag='1')
+group by aracde
+)d on a.aracde=d.aracde
+left join(
+select x.aracde,count(x.agntnum)pl,count(case when x.bb>=1000 then x.agntnum end)qp
+from(
+select aracde,agntnum,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype in ('TS','TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and batctrcde<>'TGJC'
+and aracde in(select aracde from ADMINISTRATOR.HN_aracde where cityflag IN('Y','M') and validflag='1')
+group by aracde,agntnum
+having sum(acctamt_std)>0
+)x group by x.aracde
+)e on a.aracde=e.aracde
+left join(
+select aracde,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype in ('TS','TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and batctrcde<>'TGJC'
+and aracde in(select aracde from ADMINISTRATOR.HN_aracde where cityflag IN('Y','M') and validflag='1')
+group by aracde
+)f on a.aracde=f.aracde
+left join(
+select aracde,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday
+and agtype in ('TS','TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and batctrcde<>'TGJC'
+and aracde in(select aracde from ADMINISTRATOR.HN_aracde where cityflag IN('Y','M') and validflag='1')
+group by aracde
+)g on a.aracde=g.aracde left join(
+select aracde,count(agntnum)xz
+from administrator.hn_agntinfo
+where dteapp between the_beginday and the_monenday
+and agtype in ('TS','TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and aracde in(select aracde from ADMINISTRATOR.HN_aracde where cityflag IN('Y','M') and validflag='1')
+group by aracde
+)h on a.aracde=h.aracde
+with ur;
+
+
+
+END @

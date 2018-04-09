@@ -1,0 +1,15 @@
+create  function f.getbranchname(i_branch varchar(4))
+        returns varchar(9)
+        NO EXTERNAL ACTION
+        begin atomic
+        if length(i_branch) = 4 then
+                return
+                        select trim(value(name,''))
+                                from administrator.hn_branch where station = i_branch;
+        else
+                return
+                        select trim(value(name,''))
+                                from administrator.hn_branch where branch = i_branch;
+        end if;
+        end@
+

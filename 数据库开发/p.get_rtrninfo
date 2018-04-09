@@ -1,0 +1,18 @@
+create procedure p.get_rtrninfo(myDays decimal(3,0))
+begin
+        -----------------------------------------------
+        declare dateStart decimal(8,0);
+        declare dateEnd decimal(8,0);
+        set dateStart=decimal(current date - myDays days);
+        set dateEnd=decimal(current date);
+        -----------------------------------------------
+        delete from administrator.HN_RTRNINFO where trandate between dateStart and dateEnd;
+        -----------------------------------------------
+        INSERT INTO administrator.HN_RTRNINFO
+        select  a.CHDRNUM,a.ACCTAMT,a.ACCTAMT_STD,a.CAMPAIGN,a.TRANDATE,
+        a.BATC_TYPE,a.BATC_TYPE_C,a.AGNTNUM,a.AGNTNAME,a.AGTYPE,a.TEAMNUM,a.TEAMNAME,
+        a.TEAMTYPE,a.PARTNUM,a.PARTNAME,a.PARTTYPE,a.ARACDE,a.BRANCH,a.HPRRCVDT,a.CNTTYPE,'',a.BATCTRCDE
+                from administrator.v_rtrn_day a
+                        where a.trandate between dateStart and dateEnd;
+        ------------------------------------------------------------------------------
+end @

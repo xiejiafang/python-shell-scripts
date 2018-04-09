@@ -1,0 +1,82 @@
+create procedure p.get_ybssyj()
+begin atomic
+        DECLARE GLOBAL TEMPORARY TABLE SESSION.EMP  like administrator.hn_ybyj ON COMMIT PRESERVE ROWS WITH REPLACE NOT LOGGED;
+--个险承保业绩
+insert into SESSION.EMP
+select char('AA') as series,a.branch,a.aracde,a.chdrnum,a.cnttype,acctamt,acctamt_std,freq,
+smallint(period) as period,batc_type as statcode,a.agntnum,a.agntname as name,a.trandate,'g' as sort,
+a.teamnum,a.teamname,'ac' as statcode2
+        from administrator.hn_ipe_acct_rt a
+                where  agtype IN ('BY','BZ','BC','BD','BM','BP','BA','FM') 
+		and a.agntnum <> 'FDP1P110'
+                and a.trandate=decimal(current date)                           
+union all
+--个险预收业绩
+select char('AA') as series,a.branch,a.aracde,a.chdrnum,a.cnttype,acctamt,acctamt_std,'' as freq,
+0 as period,batc_type as statcode,a.agntnum,a.agntname as name,a.trandate,'g' as sort,
+a.teamnum,a.teamname,'rt' as statcode2
+        from administrator.hn_ipe_rtrn_rt a
+                where  agtype IN ('BY','BZ','BC','BD','BM','BP','BA','FM') 
+		and a.agntnum <> 'FDP1P110'
+                and a.trandate=decimal(current date) 
+union all                               
+--银保承保业绩
+select char('AA') as series,c.branch,substr(a.station_a,3,2) as aracde,bm_cert as chdrnum,kinds as cnttype,premium as acctamt,premium as acctamt_std,
+char(jf_way) as freq,smallint(jfyears) as period,app_flag as statcode,a.agency_code as agntnum,'',
+decimal(a.make_time) as trandate,'y' as sort,'' as teamnum,'' as teamname,'' as statcode2
+        from administrator.rta19 a,administrator.hn_branch c
+                where  a.station = c.station 
+                and app_flag IN ('1','WT')  and make_time=DATE(current timestamp)
+                and a.agency_code not like '%WY%'
+union all
+--银保撤单业绩                
+select char('AA') as series,c.branch,substr(a.station_a,3,2) as aracde,bm_cert as chdrnum,kinds as cnttype,-premium as acctamt,-premium as acctamt_std,
+char(jf_way) as freq,smallint(jfyears) as period,app_flag as statcode,a.agency_code as agntnum,'',
+decimal(a.rq_make) as trandate,'y' as sort,'' as teamnum,'' as teamname,'' as statcode2
+        from administrator.rta1b9 a,administrator.hn_branch c
+                where  a.station = c.station 
+                and pg_type in ('WT','BT')  and a.rq_make=DATE(current timestamp)
+                and a.agency_code not like '%WY%';
+--更新网点代码
+update  SESSION.EMP a set (aracde) = 
+        (select ficcode from administrator.hn_zcdrpf b 
+                where a.chdrnum=b.chdrnum fetch first 1 rows only)
+        where sort = 'g' and exists (select reportag01 from administrator.hn_zcdrpf c
+                                                where a.chdrnum=c.chdrnum)
+        and trandate=decimal(current date);
+--更新手工单
+update  SESSION.EMP a set agntnum = 
+        case when (select reportag01 from administrator.hn_zcdrpf b 
+                where a.chdrnum=b.chdrnum) <> ''
+        then (select reportag01 from administrator.hn_zcdrpf b 
+                where a.chdrnum=b.chdrnum fetch first 1 rows only)
+        else agntnum end        
+        where sort = 'g' and exists (select reportag01 from administrator.hn_zcdrpf c
+                                                where a.chdrnum=c.chdrnum)
+        and trandate=decimal(current date);                  
+--将个险工号全部更新为银保工号        
+update  SESSION.EMP a set agntnum = 
+        case when (select distinct agntnum from administrator.hn_ybagent b 
+                        where a.agntnum=b.agntnum) is null then 'G'||agntnum
+        else (select distinct agency_code from administrator.hn_ybagent b 
+                        where a.agntnum=b.agntnum 
+                        and b.rq_make=(select distinct max(rq_make) 
+                                from administrator.hn_ybagent c 
+                                        where c.agency_code=b.agency_code fetch first 1 rows only)
+                                fetch first 1 rows only) end
+        where sort='g' and exists(select d.agntnum from administrator.hn_ybagent d where a.agntnum=d.agntnum);
+--只有个险工号，无银保工号的情况
+update  SESSION.EMP a set series = 'TZ'
+        where agntnum like 'G%' or series ='AA';                                       
+                                              
+--更新系列                
+update  SESSION.EMP b set (series,agntname,teamnum,teamname) = 
+        (select series,name,agency_group,group_name from administrator.hn_ybagent a where a.agency_code=b.agntnum)
+        where exists (select * from administrator.hn_ybagent c
+                                                where c.agency_code=b.agntnum)
+        and trandate=decimal(current date);   
+--手工单
+update  SESSION.EMP a set series = 'NO' where agntname like '%手工单%';  
+delete from administrator.hn_ybyj where trandate = decimal(current date);
+insert into administrator.hn_ybyj select * from session.emp;                                                          
+end@

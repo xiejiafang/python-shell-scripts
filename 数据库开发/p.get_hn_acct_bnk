@@ -1,0 +1,66 @@
+create procedure p.get_hn_ipe_acct_bnk()
+begin atomic
+        DECLARE GLOBAL TEMPORARY TABLE SESSION.EMP  like administrator.hn_ipe_acct_bnk ON COMMIT PRESERVE ROWS WITH REPLACE NOT LOGGED;
+--个险承保业绩
+insert into SESSION.EMP
+select 
+        prod_cat,
+        'NO' as series,
+        branch,
+        aracde,
+        ara_name,
+        chdrnum,
+        trandate,
+        '' as cnttype,
+        acctamt,
+        acctamt_std,
+        ape,
+        acctamt_std_a,
+        freq,
+        period,
+        '' as statcode,
+        agntnum,
+        '' as agntname,
+        '' as teamnum,
+        '' as teamname,
+        bnk_cls
+                from administrator.ipe_acct_bnk a;
+
+--更新手工单       
+update  SESSION.EMP a set agntnum = 
+        (select distinct REPORTAG01 from administrator.hn_zcdrpf b 
+                        where a.chdrnum=b.chdrnum 
+                                fetch first 1 rows only)
+        where prod_cat='IND' 
+        and a.agntname like '%手工单%'
+        and exists(select * from administrator.hn_zcdrpf b where a.chdrnum=b.chdrnum); 
+
+                                  
+--将个险工号全部更新为银保工号        
+update  SESSION.EMP a set agntnum = 
+        (select distinct agntnum from administrator.hn_ipe_agntinfo_bnk b
+                        where a.agntnum=b.receiptno 
+                                fetch first 1 rows only)
+        where prod_cat='IND' and exists(select d.agntnum from administrator.hn_ipe_agntinfo_bnk d where a.agntnum=d.receiptno);
+
+                                           
+--更新系列                
+update  SESSION.EMP b set (series,agntname,teamnum,teamname) = 
+        (select series,agntname,teamh,teamhname from administrator.hn_ipe_agntinfo_bnk a where a.agntnum=b.agntnum);  
+        
+         
+--更新空工号
+update SESSION.EMP a set(agntnum,agntname)=
+        (select agntnum,agntname from administrator.hn_acctinfo b where a.chdrnum=b.chdrnum fetch first 1 rows only)
+                where a.agntnum='';
+                
+--更新保单状态
+update SESSION.EMP a 
+        set statcode =(select statcode from administrator.hn_chdrinfo b where a.chdrnum=b.chdrnum)
+                where prod_cat='IND';
+update SESSION.EMP a 
+        set statcode =(select detail_flag from administrator.hn_basdata b where a.chdrnum=b.bm_cert and B.app_flag ='1' fetch first 1 rows only)
+                where prod_cat='BNK';
+delete from administrator.hn_ipe_acct_bnk;                                                          
+insert into administrator.hn_ipe_acct_bnk select * from SESSION.EMP;
+end@

@@ -1,0 +1,32 @@
+create procedure p.get_xuqiacct(myDays decimal(3,0))
+begin
+        -----------------------------------------------
+        declare dateStart decimal(8,0);
+        declare dateEnd decimal(8,0);
+        set dateStart=decimal(current date - myDays days);
+        set dateEnd=decimal(current date);
+        -----------------------------------------------
+        delete from administrator.hn_xuqiacct where trandate between dateStart and dateEnd;
+        -----------------------------------------------
+        insert into administrator.hn_xuqiacct
+        select a.CHDRNUM,a.INS,a.FREQ,a.INSS,a.RLDGACCT,a.ACCTAMT,a.TRANDATE,a.BATCTRCDE,a.EFFDATE,a.TRANNO,a.SACSCODE,
+        a.SACSTYP,a.GLCODE,a.GLSIGN,a.AGNTNUM,a.AGNTNAME,a.AGTYPE,a.TEAMNUM,a.TEAMNAME,a.TEAMTYPE,a.PARTNUM,
+        a.PARTNAME,a.PARTTYPE,a.AGNTARA,a.AGNTBR,a.ZCLLBR,a.ZCLLARA,a.ZCLLCTOR,a.ZCLLNAME,a.ZCLLCLS,a.ZGRPID,
+        a.ZCSCBR,a.ZCSCARA,a.ZCSCCTOR,a.ZCSCNAME,a.ZCSCCLS,a.ZCSCGRPID,a.STATCODE,a.PTDATE,a.CNTTYPE,
+        occdate,round((trandate-occdate)/10000,0)+1,case when billchnl is null then '0' else billchnl end
+                from administrator.ipe_xuqiacct a left join administrator.ipe_xuqidetail b on a.chdrnum=b.chdrnum
+                        where trandate between dateStart and dateEnd;
+        ------------------------------------------------------------------------------
+        update administrator.hn_xuqiacct set zcllbr='80' 
+                where trandate between dateStart and dateEnd and zcllbr='I0';
+        update administrator.hn_xuqiacct set agntbr='80' 
+                where trandate between dateStart and dateEnd and agntbr='I0';                
+        update administrator.hn_xuqiacct set agntara='807' 
+                where trandate between dateStart and dateEnd and agntara='I01';  
+        update administrator.hn_xuqiacct set zcllara='807' 
+                where trandate between dateStart and dateEnd and zcllara='I01';                 
+        update administrator.hn_xuqiacct set zcscbr='80' 
+                where trandate between dateStart and dateEnd and zcscbr='I0';                 
+        update administrator.hn_xuqiacct set zcscara='807' 
+                where trandate between dateStart and dateEnd and zcscara='807';
+end @

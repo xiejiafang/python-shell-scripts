@@ -1,0 +1,64 @@
+create procedure p.get_ybyj_new()
+begin atomic
+        DECLARE GLOBAL TEMPORARY TABLE SESSION.EMP  like administrator.hn_ipe_acct_bnk ON COMMIT PRESERVE ROWS WITH REPLACE NOT LOGGED;
+--个险承保业绩
+insert into SESSION.EMP
+select 
+        prod_cat,
+        'AA' as series,
+        branch,
+        aracde,
+        ara_name,
+        chdrnum,
+        trandate,
+        substr(inss,1,3) as cnttype,
+        acctamt,
+        acctamt_std,
+        ape,
+        acctamt_std_a,
+        freq,
+        period,
+        '' as statcode,
+        agntnum,
+        '' as agntname,
+        '' as teamnum,
+        '' as teamname,
+        bnk_cls
+                from administrator.ipe_acct_bnk a;
+                                  
+--将个险工号全部更新为银保工号        
+update  SESSION.EMP a set agntnum = 
+        case when (select distinct agntnum from administrator.hn_ybagent b 
+                        where a.agntnum=b.agntnum) is null then 'G'||agntnum
+        else (select distinct agency_code from administrator.hn_ybagent b 
+                        where a.agntnum=b.agntnum 
+                        and b.rq_make=(select distinct max(rq_make) 
+                                from administrator.hn_ybagent c 
+                                        where c.agency_code=b.agency_code fetch first 1 rows only)
+                                fetch first 1 rows only) end
+        where prod_cat='IND' and exists(select d.agntnum from administrator.hn_ybagent d where a.agntnum=d.agntnum);
+--只有个险工号，无银保工号的情况
+update  SESSION.EMP a set series = 'TZ'
+        where agntnum like 'G%' or series ='AA';    
+        
+update  SESSION.EMP a set series = 'NO' where agntname like '%手工单%';                                            
+                                              
+--更新系列                
+update  SESSION.EMP b set (series,agntname,teamnum,teamname) = 
+        (select series,name,agency_group,group_name from administrator.hn_ybagent a where a.agency_code=b.agntnum)
+        where exists (select * from administrator.hn_ybagent c
+                                                where c.agency_code=b.agntnum);   
+--更新空工号
+update SESSION.EMP a set(agntnum,agntname)=
+        (select agntnum,agntname from administrator.hn_acctinfo b where a.chdrnum=b.chdrnum fetch first 1 rows only)
+                where a.agntnum='';
+--更新保单状态
+update SESSION.EMP a 
+        set statcode =(select statcode from administrator.hn_chdrinfo b where a.chdrnum=b.chdrnum)
+                where prod_cat='IND';
+update SESSION.EMP a 
+        set statcode =(select detail_flag from administrator.hn_basdata b where a.chdrnum=b.bm_cert and B.app_flag ='1' fetch first 1 rows only)
+                where prod_cat='BNK';
+delete from administrator.hn_ipe_acct_bnk;                                                          
+insert into administrator.hn_ipe_acct_bnk select * from SESSION.EMP;
+end@

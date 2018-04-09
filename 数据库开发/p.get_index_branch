@@ -1,0 +1,686 @@
+CREATE PROCEDURE p.GET_INDEX_BRANCH()
+	DYNAMIC RESULT SETS 1
+P1: BEGIN
+
+declare the_date date;	
+declare the_day int;
+declare the_beginday int;
+declare the_monenday int;
+declare the_bf_beginday int;
+declare the_bf_monenday int;
+
+--开始时间/日期
+set the_date=(values (current date - 1 days));
+set the_day=(values year(current date))*10000+(values month(current date))*100+(values day(current date));
+set the_beginday =(values year(the_date))*10000+(values month(the_date))*100+01;
+set the_monenday =(values year(the_date))*10000+(values month(the_date))*100+(values day(the_date));
+set the_bf_beginday =the_beginday-10000;
+set the_bf_monenday =the_monenday-10000;
+--11F03
+--update/delete
+if (day(current date) > 1) then
+delete from administrator.hn_index_branch where ctime=the_day;
+end if;
+update administrator.hn_index_branch set his='D' where ctime<the_day and his='N';
+--insert
+
+-----受理指标
+--flag/YX 营销，index_name/SL 受理指标 ,his/N 新插入，D表示理历史,temp规模，件数，人力，同期规模，件数，人力
+insert into administrator.hn_index_branch
+(branch,flag,report_no,index_name,temp0,temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,ctime)
+select a.branch,'YX','11F03','SL',coalesce(b.gm,0),coalesce(b.js,0),coalesce(b.rs,0),coalesce(c.gm,0),coalesce(c.js,0),coalesce(c.rs,0),0,0,0,0,the_day
+from (select branch from administrator.hn_branch where branch<>'D' )a 
+left join(
+select c.branch,sum(acctamt)gm,count(distinct a.chdrnum)js,count(distinct c.agntnum)rs
+from administrator.hn_chdrslinfo a,administrator.hn_chdrinfo b,administrator.hn_agntinfo c
+where a.hprrcvdt between the_beginday and the_monenday
+and c.agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+and a.chdrnum=b.chdrnum and b.agntnum=c.agntnum and a.acctamt>0 group by c.branch)b on a.branch=b.branch
+left join(
+select c.branch,sum(acctamt)gm,count(distinct a.chdrnum)js,count(distinct c.agntnum)rs
+from administrator.hn_chdrslinfo a,administrator.hn_chdrinfo b,administrator.hn_agntinfo c
+where a.hprrcvdt between the_bf_beginday and the_bf_monenday
+and c.agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+and a.chdrnum=b.chdrnum
+and b.agntnum=c.agntnum and a.acctamt>0 group by c.branch)c on a.branch=c.branch with ur;
+
+--flag/SZ 收展，index_name/SL 受理指标 ,his/N 新插入，D表示理历史,temp规模，件数，人力，同期规模，件数，人力
+insert into administrator.hn_index_branch
+(branch,flag,report_no,index_name,temp0,temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,ctime)
+select a.branch,'SZ','11F03','SL',coalesce(b.gm,0),coalesce(b.js,0),coalesce(b.rs,0),coalesce(c.gm,0),coalesce(c.js,0),coalesce(c.rs,0),0,0,0,0,the_day
+from (select branch from administrator.hn_branch where branch<>'D' )a 
+left join(
+select c.branch,sum(acctamt)gm,count(distinct a.chdrnum)js,count(distinct c.agntnum)rs
+from administrator.hn_chdrslinfo a,administrator.hn_chdrinfo b,administrator.hn_agntinfo c
+where a.hprrcvdt between the_beginday and the_monenday
+and c.agtype ='RC'
+and a.chdrnum=b.chdrnum and b.agntnum=c.agntnum and a.acctamt>0 group by c.branch)b on a.branch=b.branch
+left join(
+select c.branch,sum(acctamt)gm,count(distinct a.chdrnum)js,count(distinct c.agntnum)rs
+from administrator.hn_chdrslinfo a,administrator.hn_chdrinfo b,administrator.hn_agntinfo c
+where a.hprrcvdt between the_bf_beginday and the_bf_monenday
+and c.agtype ='RC'
+and a.chdrnum=b.chdrnum
+and b.agntnum=c.agntnum and a.acctamt>0 group by c.branch)c on a.branch=c.branch with ur;
+
+
+--flag/GX 个险，index_name/SL 受理指标 ,his/N 新插入，D表示理历史,temp规模，件数，人力，同期规模，件数，人力
+insert into administrator.hn_index_branch
+(branch,flag,report_no,index_name,temp0,temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,ctime)
+select a.branch,'GX','11F03','SL',coalesce(b.gm,0),coalesce(b.js,0),coalesce(b.rs,0),coalesce(c.gm,0),coalesce(c.js,0),coalesce(c.rs,0),0,0,0,0,the_day
+from (select branch from administrator.hn_branch where branch<>'D' )a 
+left join(
+select c.branch,sum(acctamt)gm,count(distinct a.chdrnum)js,count(distinct c.agntnum)rs
+from administrator.hn_chdrslinfo a,administrator.hn_chdrinfo b,administrator.hn_agntinfo c
+where a.hprrcvdt between the_beginday and the_monenday
+and c.agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and a.chdrnum=b.chdrnum and b.agntnum=c.agntnum and a.acctamt>0 group by c.branch)b on a.branch=b.branch
+left join(
+select c.branch,sum(acctamt)gm,count(distinct a.chdrnum)js,count(distinct c.agntnum)rs
+from administrator.hn_chdrslinfo a,administrator.hn_chdrinfo b,administrator.hn_agntinfo c
+where a.hprrcvdt between the_bf_beginday and the_bf_monenday
+and c.agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and a.chdrnum=b.chdrnum
+and b.agntnum=c.agntnum and a.acctamt>0 group by c.branch)c on a.branch=c.branch with ur;
+
+
+-----预收指标
+--flag/YX 营销，index_name/YS 受理指标 ,his/N 新插入，D表示理历史,temp规模，件数，人力，同期规模，件数，人力
+insert into administrator.hn_index_branch
+(branch,flag,report_no,index_name,temp0,temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,ctime)
+select a.branch,'YX','11F03','YS',coalesce(b.gm,0),coalesce(b.js,0),coalesce(b.rs,0),coalesce(c.gm,0),coalesce(c.js,0),coalesce(c.rs,0),0,0,0,0,the_day
+from (select branch from administrator.hn_branch where branch<>'D')a 
+left join(
+select branch,sum(acctamt)gm,count(distinct chdrnum)js,count(distinct agntnum)rs
+from administrator.hn_rtrninfo
+where batc_type='SL' and trandate between the_beginday and the_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+group by branch
+)b on a.branch=b.branch
+left join(
+select branch,sum(acctamt)gm,count(distinct chdrnum)js,count(distinct agntnum)rs
+from administrator.hn_rtrninfo
+where batc_type='SL' and trandate between the_bf_beginday and the_bf_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+group by branch )c on a.branch=c.branch  with ur;
+
+--flag/SZ  收展，index_name/YS 受理指标 ,his/N 新插入，D表示理历史,temp规模，件数，人力，同期规模，件数，人力
+insert into administrator.hn_index_branch
+(branch,flag,report_no,index_name,temp0,temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,ctime)
+select a.branch,'SZ','11F03','YS',coalesce(b.gm,0),coalesce(b.js,0),coalesce(b.rs,0),coalesce(c.gm,0),coalesce(c.js,0),coalesce(c.rs,0),0,0,0,0,the_day
+from (select branch from administrator.hn_branch where branch<>'D')a 
+left join(
+select branch,sum(acctamt)gm,count(distinct chdrnum)js,count(distinct agntnum)rs
+from administrator.hn_rtrninfo
+where batc_type='SL' and trandate between the_beginday and the_monenday
+and agtype ='RC'
+group by branch
+)b on a.branch=b.branch
+left join(
+select branch,sum(acctamt)gm,count(distinct chdrnum)js,count(distinct agntnum)rs
+from administrator.hn_rtrninfo
+where batc_type='SL' and trandate between the_bf_beginday and the_bf_monenday
+and agtype ='RC'
+group by branch )c on a.branch=c.branch  with ur;
+
+--flag/GX 个险，index_name/YS 受理指标 ,his/N 新插入，D表示理历史,temp规模，件数，人力，同期规模，件数，人力
+insert into administrator.hn_index_branch
+(branch,flag,report_no,index_name,temp0,temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,ctime)
+select a.branch,'GX','11F03','YS',coalesce(b.gm,0),coalesce(b.js,0),coalesce(b.rs,0),coalesce(c.gm,0),coalesce(c.js,0),coalesce(c.rs,0),0,0,0,0,the_day
+from (select branch from administrator.hn_branch where branch<>'D')a 
+left join(
+select branch,sum(acctamt)gm,count(distinct chdrnum)js,count(distinct agntnum)rs
+from administrator.hn_rtrninfo
+where batc_type='SL' and trandate between the_beginday and the_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+group by branch
+)b on a.branch=b.branch
+left join(
+select branch,sum(acctamt)gm,count(distinct chdrnum)js,count(distinct agntnum)rs
+from administrator.hn_rtrninfo
+where batc_type='SL' and trandate between the_bf_beginday and the_bf_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+group by branch )c on a.branch=c.branch  with ur;
+
+
+
+
+-----承保指标
+--flag/YX 营销，index_name/CB 受理指标 ,his/N 新插入，D表示理历史,temp标保，价值，件数，人力，同期标保，价值，件数，人力
+insert into administrator.hn_index_branch
+(branch,flag,report_no,index_name,temp0,temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,ctime)
+select a.branch,'YX','11F03','CB',coalesce(b.bb,0),coalesce(b.jz,0),coalesce(d.bb,0),coalesce(d.js,0),coalesce(c.bb,0),coalesce(c.jz,0),coalesce(e.bb,0),coalesce(e.js,0),0,0,the_day
+from (select branch from administrator.hn_branch where branch<>'D')a 
+left join(
+select branch,sum(acctamt_std)bb,sum(acctamt_std_a)jz
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+and batctrcde<>'TGJC'
+group by branch
+)b on a.branch=b.branch
+left join(
+select branch,sum(acctamt_std)bb,sum(acctamt_std_a)jz
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+and batctrcde<>'TGJC'
+group by branch
+)c on a.branch=c.branch 
+left join(
+select branch,sum(acctamt_std)bb,(count(distinct case when batc_type='CB' then chdrnum end)-count(distinct case when batc_type='CD' then chdrnum end))js
+from administrator.hn_acctinfo
+where trandate between  the_beginday and the_monenday and batctrcde<>'TGJC'
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+group by branch
+)d on a.branch=d.branch
+left join(
+select branch,sum(acctamt_std)bb,(count(distinct case when batc_type='CB' then chdrnum end)-count(distinct case when batc_type='CD' then chdrnum end))js
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday and batctrcde<>'TGJC'
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+group by branch
+)e on a.branch=e.branch with ur;
+
+--flag/SZ 收展，index_name/CB 受理指标 ,his/N 新插入，D表示理历史,temp标保，价值，件数，人力，同期标保，价值，件数，人力
+insert into administrator.hn_index_branch
+(branch,flag,report_no,index_name,temp0,temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,ctime)
+select a.branch,'SZ','11F03','CB',coalesce(b.bb,0),coalesce(b.jz,0),coalesce(d.bb,0),coalesce(d.js,0),coalesce(c.bb,0),coalesce(c.jz,0),coalesce(e.bb,0),coalesce(e.js,0),0,0,the_day
+from (select branch from administrator.hn_branch where branch<>'D')a 
+left join(
+select branch,sum(acctamt_std)bb,sum(acctamt_std_a)jz
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype ='RC'
+and batctrcde<>'TGJC'
+group by branch
+)b on a.branch=b.branch
+left join(
+select branch,sum(acctamt_std)bb,sum(acctamt_std_a)jz
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday
+and agtype ='RC'
+and batctrcde<>'TGJC'
+group by branch
+)c on a.branch=c.branch 
+left join(
+select branch,sum(acctamt_std)bb,(count(distinct case when batc_type='CB' then chdrnum end)-count(distinct case when batc_type='CD' then chdrnum end))js
+from administrator.hn_acctinfo
+where trandate between  the_beginday and the_monenday and batctrcde<>'TGJC'
+and agtype ='RC'
+group by branch
+)d on a.branch=d.branch
+left join(
+select branch,sum(acctamt_std)bb,(count(distinct case when batc_type='CB' then chdrnum end)-count(distinct case when batc_type='CD' then chdrnum end))js
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday and batctrcde<>'TGJC'
+and agtype ='RC'
+group by branch
+)e on a.branch=e.branch with ur;
+
+--flag/GX 个险，index_name/CB 受理指标 ,his/N 新插入，D表示理历史,temp标保，价值，件数，人力，同期标保，价值，件数，人力
+insert into administrator.hn_index_branch
+(branch,flag,report_no,index_name,temp0,temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,ctime)
+select a.branch,'GX','11F03','CB',coalesce(b.bb,0),coalesce(b.jz,0),coalesce(d.bb,0),coalesce(d.js,0),coalesce(c.bb,0),coalesce(c.jz,0),coalesce(e.bb,0),coalesce(e.js,0),0,0,the_day
+from (select branch from administrator.hn_branch where branch<>'D')a 
+left join(
+select branch,sum(acctamt_std)bb,sum(acctamt_std_a)jz
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and batctrcde<>'TGJC'
+group by branch
+)b on a.branch=b.branch
+left join(
+select branch,sum(acctamt_std)bb,sum(acctamt_std_a)jz
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and batctrcde<>'TGJC'
+group by branch
+)c on a.branch=c.branch 
+left join(
+select branch,sum(acctamt_std)bb,(count(distinct case when batc_type='CB' then chdrnum end)-count(distinct case when batc_type='CD' then chdrnum end))js
+from administrator.hn_acctinfo
+where trandate between  the_beginday and the_monenday and batctrcde<>'TGJC'
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+group by branch
+)d on a.branch=d.branch
+left join(
+select branch,sum(acctamt_std)bb,(count(distinct case when batc_type='CB' then chdrnum end)-count(distinct case when batc_type='CD' then chdrnum end))js
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday and batctrcde<>'TGJC'
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+group by branch
+)e on a.branch=e.branch with ur;
+
+
+-----在册新增破零指标
+--flag/YX 营销，index_name/ZC 在册人力入,司人力,his/N 新插入，D表示理历史,temp在册人力,新增人力，同期在册人力，新增人力
+insert into administrator.hn_index_branch
+(branch,flag,report_no,index_name,temp0,temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,ctime)
+select a.branch,'YX','11F03','ZC',coalesce(b.rs,0),coalesce(c.rs,0),coalesce(d.rs,0),coalesce(e.rs,0),coalesce(f.pl,0),coalesce(f.js,0),coalesce(g.pl,0),coalesce(g.js,0),0,0,the_day
+from (select branch from administrator.hn_branch where branch<>'D')a 
+left join
+(select branch,count(distinct agntnum)rs
+from administrator.hn_agntinfo
+where dteapp <=the_monenday and dtetrm>the_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+group by branch)b on a.branch=b.branch
+left join(select branch,count(distinct agntnum)rs
+from administrator.hn_agntinfo
+where dteapp <=the_bf_monenday and dtetrm>the_bf_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+group by branch)c on a.branch=c.branch
+left join(
+select branch,count(distinct agntnum)rs
+from administrator.hn_agntinfo
+where dteapp between the_beginday and the_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+group by branch )d on a.branch=d.branch
+left join(
+select branch,count(distinct agntnum)rs
+from administrator.hn_agntinfo
+where dteapp between the_bf_beginday and the_bf_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD') 
+group by branch )e on a.branch=e.branch 
+left join(select x.branch,count(x.agntnum)pl,sum(x.js)js
+from(select branch,agntnum,sum(acctamt_std)bb,count(distinct chdrnum)js
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+and batctrcde<>'TGJC'group by branch,agntnum having sum(acctamt_std)>0 )x group by x.branch )f on a.branch=f.branch
+left join(select x.branch,count(x.agntnum)pl,sum(x.js)js
+from(select branch,agntnum,sum(acctamt_std)bb,count(distinct chdrnum)js
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+and batctrcde<>'TGJC' group by branch,agntnum having sum(acctamt_std)>0 )x group by x.branch )g on a.branch=g.branch
+with ur;
+
+--flag/SZ 收展，index_name/ZC 在册人力入,司人力,his/N 新插入，D表示理历史,temp在册人力,新增人力，同期在册人力，新增人力
+insert into administrator.hn_index_branch
+(branch,flag,report_no,index_name,temp0,temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,ctime)
+select a.branch,'SZ','11F03','ZC',coalesce(b.rs,0),coalesce(c.rs,0),coalesce(d.rs,0),coalesce(e.rs,0),coalesce(f.pl,0),coalesce(f.js,0),coalesce(g.pl,0),coalesce(g.js,0),0,0,the_day
+from (select branch from administrator.hn_branch where branch<>'D')a 
+left join
+(select branch,count(distinct agntnum)rs
+from administrator.hn_agntinfo
+where dteapp <=the_monenday and dtetrm>the_monenday
+and agtype ='RC'
+group by branch)b on a.branch=b.branch
+left join(select branch,count(distinct agntnum)rs
+from administrator.hn_agntinfo
+where dteapp <=the_bf_monenday and dtetrm>the_bf_monenday
+and agtype  ='RC'
+group by branch)c on a.branch=c.branch
+left join(
+select branch,count(distinct agntnum)rs
+from administrator.hn_agntinfo
+where dteapp between the_beginday and the_monenday
+and agtype ='RC'
+group by branch )d on a.branch=d.branch
+left join(
+select branch,count(distinct agntnum)rs
+from administrator.hn_agntinfo
+where dteapp between the_bf_beginday and the_bf_monenday
+and agtype ='RC'
+group by branch )e on a.branch=e.branch 
+left join(select x.branch,count(x.agntnum)pl,sum(x.js)js
+from(select branch,agntnum,sum(acctamt_std)bb,count(distinct chdrnum)js
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype ='RC'
+and batctrcde<>'TGJC'group by branch,agntnum having sum(acctamt_std)>0 )x group by x.branch )f on a.branch=f.branch
+left join(select x.branch,count(x.agntnum)pl,sum(x.js)js
+from(select branch,agntnum,sum(acctamt_std)bb,count(distinct chdrnum)js
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday
+and agtype ='RC'
+and batctrcde<>'TGJC' group by branch,agntnum having sum(acctamt_std)>0 )x group by x.branch )g on a.branch=g.branch
+with ur;
+
+--flag/GX 个险，index_name/ZC 在册人力入,司人力,his/N 新插入，D表示理历史,temp在册人力,新增人力，同期在册人力，新增人力
+insert into administrator.hn_index_branch
+(branch,flag,report_no,index_name,temp0,temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,ctime)
+select a.branch,'GX','11F03','ZC',coalesce(b.rs,0),coalesce(c.rs,0),coalesce(d.rs,0),coalesce(e.rs,0),coalesce(f.pl,0),coalesce(f.js,0),coalesce(g.pl,0),coalesce(g.js,0),0,0,the_day
+from (select branch from administrator.hn_branch where branch<>'D')a 
+left join
+(select branch,count(distinct agntnum)rs
+from administrator.hn_agntinfo
+where dteapp <=the_monenday and dtetrm>the_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+group by branch)b on a.branch=b.branch
+left join(select branch,count(distinct agntnum)rs
+from administrator.hn_agntinfo
+where dteapp <=the_bf_monenday and dtetrm>the_bf_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+group by branch)c on a.branch=c.branch
+left join(
+select branch,count(distinct agntnum)rs
+from administrator.hn_agntinfo
+where dteapp between the_beginday and the_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+group by branch )d on a.branch=d.branch
+left join(
+select branch,count(distinct agntnum)rs
+from administrator.hn_agntinfo
+where dteapp between the_bf_beginday and the_bf_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC') 
+group by branch )e on a.branch=e.branch 
+left join(select x.branch,count(x.agntnum)pl,sum(x.js)js
+from(select branch,agntnum,sum(acctamt_std)bb,count(distinct chdrnum)js
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and batctrcde<>'TGJC'group by branch,agntnum having sum(acctamt_std)>0 )x group by x.branch )f on a.branch=f.branch
+left join(select x.branch,count(x.agntnum)pl,sum(x.js)js
+from(select branch,agntnum,sum(acctamt_std)bb,count(distinct chdrnum)js
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and batctrcde<>'TGJC' group by branch,agntnum having sum(acctamt_std)>0 )x group by x.branch )g on a.branch=g.branch
+with ur;
+
+-----千P指标
+--flag/YX 营销，index_name/ZC 在册人力入,司人力,his/N 新插入，D表示理历史,temp 千P，件数，3千P，件数，同期千P，件数，3千P，件数
+insert into administrator.hn_index_branch
+(branch,flag,report_no,index_name,temp0,temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,ctime)
+select a.branch,'YX','11F03','QP',coalesce(b.qp,0),coalesce(b.js,0),coalesce(c.qp,0),coalesce(c.js,0),coalesce(d.qp,0),coalesce(d.js,0),coalesce(e.qp,0),coalesce(e.js,0),0,0,the_day
+from (select branch from administrator.hn_branch where branch<>'D')a 
+left join(
+select x.branch,count(x.agntnum)qp,sum(x.js)js from(select branch,agntnum,sum(acctamt_std)bb,count(distinct chdrnum)js
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+and batctrcde<>'TGJC'
+group by branch,agntnum having sum(acctamt_std)>=1000)x group by x.branch)b on a.branch=b.branch
+left join(
+select x.branch,count(x.agntnum)qp,sum(x.js)js from(select branch,agntnum,sum(acctamt_std)bb,count(distinct chdrnum)js
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+and batctrcde<>'TGJC'
+group by branch,agntnum having sum(acctamt_std)>=1000)x group by x.branch)c on a.branch=c.branch
+left join(
+select x.branch,count(x.agntnum)qp,sum(x.js)js from(select branch,agntnum,sum(acctamt_std)bb,count(distinct chdrnum)js 
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+and batctrcde<>'TGJC'
+group by branch,agntnum having sum(acctamt_std)>=3000)x group by x.branch)d on a.branch=d.branch
+left join(
+select x.branch,count(x.agntnum)qp,sum(x.js)js from(select branch,agntnum,sum(acctamt_std)bb,count(distinct chdrnum)js
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+and batctrcde<>'TGJC' 
+group by branch,agntnum having sum(acctamt_std)>=3000)x group by x.branch)e on a.branch=e.branch with ur;
+
+-----万P指标
+--flag/YX 营销，index_name/ZC 在册人力入,司人力,his/N 新插入，D表示理历史,temp WP，WP件数,3WP，5WP，10WP人力，同期 WP，WP件数,3WP，5WP，10WP人力
+insert into administrator.hn_index_branch
+(branch,flag,report_no,index_name,temp0,temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,ctime)
+select a.branch,'YX','11F03','WP',coalesce(b.qp,0),coalesce(b.js,0),coalesce(c.qp,0),coalesce(c.js,0),coalesce(d.qp,0),coalesce(e.qp,0),coalesce(f.qp,0),coalesce(g.qp,0),coalesce(h.qp,0),coalesce(i.qp,0),the_day
+from (select branch from administrator.hn_branch where branch<>'D')a 
+left join(
+select x.branch,count(x.agntnum)qp,sum(x.js)js from(select branch,agntnum,sum(acctamt_std)bb,count(distinct chdrnum)js
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+and batctrcde<>'TGJC'
+group by branch,agntnum having sum(acctamt_std)>=10000)x group by x.branch)b on a.branch=b.branch
+left join(
+select x.branch,count(x.agntnum)qp,sum(x.js)js from(select branch,agntnum,sum(acctamt_std)bb,count(distinct chdrnum)js
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+and batctrcde<>'TGJC'
+group by branch,agntnum having sum(acctamt_std)>=10000)x group by x.branch)c on a.branch=c.branch
+left join(
+select x.branch,count(x.agntnum)qp from(select branch,agntnum,sum(acctamt_std)bb 
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+and batctrcde<>'TGJC'
+group by branch,agntnum having sum(acctamt_std)>=30000)x group by x.branch)d on a.branch=d.branch
+left join(
+select x.branch,count(x.agntnum)qp from(select branch,agntnum,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+and batctrcde<>'TGJC' 
+group by branch,agntnum having sum(acctamt_std)>=30000)x group by x.branch)e on a.branch=e.branch 
+left join(
+select x.branch,count(x.agntnum)qp from(select branch,agntnum,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+and batctrcde<>'TGJC'
+group by branch,agntnum having sum(acctamt_std)>=50000)x group by x.branch)f on a.branch=f.branch
+left join(
+select x.branch,count(x.agntnum)qp from(select branch,agntnum,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+and batctrcde<>'TGJC'
+group by branch,agntnum having sum(acctamt_std)>=50000)x group by x.branch)g on a.branch=g.branch
+left join(
+select x.branch,count(x.agntnum)qp from(select branch,agntnum,sum(acctamt_std)bb 
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+and batctrcde<>'TGJC'
+group by branch,agntnum having sum(acctamt_std)>=100000)x group by x.branch)h on a.branch=h.branch
+left join(
+select x.branch,count(x.agntnum)qp from(select branch,agntnum,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD')
+and batctrcde<>'TGJC' 
+group by branch,agntnum having sum(acctamt_std)>=100000)x group by x.branch)i on a.branch=i.branch 
+with ur;
+
+--个险
+-----千P指标
+--flag/YX 营销，index_name/ZC 在册人力入,司人力,his/N 新插入，D表示理历史,temp 千P，件数，3千P，件数，同期千P，件数，3千P，件数
+insert into administrator.hn_index_branch
+(branch,flag,report_no,index_name,temp0,temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,ctime)
+select a.branch,'GX','11F03','QP',coalesce(b.qp,0),coalesce(b.js,0),coalesce(c.qp,0),coalesce(c.js,0),coalesce(d.qp,0),coalesce(d.js,0),coalesce(e.qp,0),coalesce(e.js,0),0,0,the_day
+from (select branch from administrator.hn_branch where branch<>'D')a 
+left join(
+select x.branch,count(x.agntnum)qp,sum(x.js)js from(select branch,agntnum,sum(acctamt_std)bb,count(distinct chdrnum)js
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and batctrcde<>'TGJC'
+group by branch,agntnum having sum(acctamt_std)>=1000)x group by x.branch)b on a.branch=b.branch
+left join(
+select x.branch,count(x.agntnum)qp,sum(x.js)js from(select branch,agntnum,sum(acctamt_std)bb,count(distinct chdrnum)js
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and batctrcde<>'TGJC'
+group by branch,agntnum having sum(acctamt_std)>=1000)x group by x.branch)c on a.branch=c.branch
+left join(
+select x.branch,count(x.agntnum)qp,sum(x.js)js from(select branch,agntnum,sum(acctamt_std)bb,count(distinct chdrnum)js 
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and batctrcde<>'TGJC'
+group by branch,agntnum having sum(acctamt_std)>=3000)x group by x.branch)d on a.branch=d.branch
+left join(
+select x.branch,count(x.agntnum)qp,sum(x.js)js from(select branch,agntnum,sum(acctamt_std)bb,count(distinct chdrnum)js
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and batctrcde<>'TGJC' 
+group by branch,agntnum having sum(acctamt_std)>=3000)x group by x.branch)e on a.branch=e.branch with ur;
+
+-----万P指标
+--flag/YX 营销，index_name/ZC 在册人力入,司人力,his/N 新插入，D表示理历史,temp WP，WP件数,3WP，5WP，10WP人力，同期 WP，WP件数,3WP，5WP，10WP人力
+insert into administrator.hn_index_branch
+(branch,flag,report_no,index_name,temp0,temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,ctime)
+select a.branch,'GX','11F03','WP',coalesce(b.qp,0),coalesce(b.js,0),coalesce(c.qp,0),coalesce(c.js,0),coalesce(d.qp,0),coalesce(e.qp,0),coalesce(f.qp,0),coalesce(g.qp,0),coalesce(h.qp,0),coalesce(i.qp,0),the_day
+from (select branch from administrator.hn_branch where branch<>'D')a 
+left join(
+select x.branch,count(x.agntnum)qp,sum(x.js)js from(select branch,agntnum,sum(acctamt_std)bb,count(distinct chdrnum)js
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and batctrcde<>'TGJC'
+group by branch,agntnum having sum(acctamt_std)>=10000)x group by x.branch)b on a.branch=b.branch
+left join(
+select x.branch,count(x.agntnum)qp,sum(x.js)js from(select branch,agntnum,sum(acctamt_std)bb,count(distinct chdrnum)js
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and batctrcde<>'TGJC'
+group by branch,agntnum having sum(acctamt_std)>=10000)x group by x.branch)c on a.branch=c.branch
+left join(
+select x.branch,count(x.agntnum)qp from(select branch,agntnum,sum(acctamt_std)bb 
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and batctrcde<>'TGJC'
+group by branch,agntnum having sum(acctamt_std)>=30000)x group by x.branch)d on a.branch=d.branch
+left join(
+select x.branch,count(x.agntnum)qp from(select branch,agntnum,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and batctrcde<>'TGJC' 
+group by branch,agntnum having sum(acctamt_std)>=30000)x group by x.branch)e on a.branch=e.branch 
+left join(
+select x.branch,count(x.agntnum)qp from(select branch,agntnum,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and batctrcde<>'TGJC'
+group by branch,agntnum having sum(acctamt_std)>=50000)x group by x.branch)f on a.branch=f.branch
+left join(
+select x.branch,count(x.agntnum)qp from(select branch,agntnum,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and batctrcde<>'TGJC'
+group by branch,agntnum having sum(acctamt_std)>=50000)x group by x.branch)g on a.branch=g.branch
+left join(
+select x.branch,count(x.agntnum)qp from(select branch,agntnum,sum(acctamt_std)bb 
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and batctrcde<>'TGJC'
+group by branch,agntnum having sum(acctamt_std)>=100000)x group by x.branch)h on a.branch=h.branch
+left join(
+select x.branch,count(x.agntnum)qp from(select branch,agntnum,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday
+and agtype in('TA','SA','TS','SM','SD','AS','SS','UM','AD','SE','HD','RC')
+and batctrcde<>'TGJC' 
+group by branch,agntnum having sum(acctamt_std)>=100000)x group by x.branch)i on a.branch=i.branch 
+with ur;
+
+--收展
+-----千P指标
+--flag/YX 营销，index_name/ZC 在册人力入,司人力,his/N 新插入，D表示理历史,temp 千P，件数，3千P，件数，同期千P，件数，3千P，件数
+insert into administrator.hn_index_branch
+(branch,flag,report_no,index_name,temp0,temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,ctime)
+select a.branch,'SZ','11F03','QP',coalesce(b.qp,0),coalesce(b.js,0),coalesce(c.qp,0),coalesce(c.js,0),coalesce(d.qp,0),coalesce(d.js,0),coalesce(e.qp,0),coalesce(e.js,0),0,0,the_day
+from (select branch from administrator.hn_branch where branch<>'D')a 
+left join(
+select x.branch,count(x.agntnum)qp,sum(x.js)js from(select branch,agntnum,sum(acctamt_std)bb,count(distinct chdrnum)js
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype ='RC'
+and batctrcde<>'TGJC'
+group by branch,agntnum having sum(acctamt_std)>=1000)x group by x.branch)b on a.branch=b.branch
+left join(
+select x.branch,count(x.agntnum)qp,sum(x.js)js from(select branch,agntnum,sum(acctamt_std)bb,count(distinct chdrnum)js
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday
+and agtype ='RC'
+and batctrcde<>'TGJC'
+group by branch,agntnum having sum(acctamt_std)>=1000)x group by x.branch)c on a.branch=c.branch
+left join(
+select x.branch,count(x.agntnum)qp,sum(x.js)js from(select branch,agntnum,sum(acctamt_std)bb,count(distinct chdrnum)js 
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype ='RC'
+and batctrcde<>'TGJC'
+group by branch,agntnum having sum(acctamt_std)>=3000)x group by x.branch)d on a.branch=d.branch
+left join(
+select x.branch,count(x.agntnum)qp,sum(x.js)js from(select branch,agntnum,sum(acctamt_std)bb,count(distinct chdrnum)js
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday
+and agtype ='RC'
+and batctrcde<>'TGJC' 
+group by branch,agntnum having sum(acctamt_std)>=3000)x group by x.branch)e on a.branch=e.branch with ur;
+
+-----万P指标
+--flag/YX 营销，index_name/ZC 在册人力入,司人力,his/N 新插入，D表示理历史,temp WP，WP件数,3WP，5WP，10WP人力，同期 WP，WP件数,3WP，5WP，10WP人力
+insert into administrator.hn_index_branch
+(branch,flag,report_no,index_name,temp0,temp1,temp2,temp3,temp4,temp5,temp6,temp7,temp8,temp9,ctime)
+select a.branch,'SZ','11F03','WP',coalesce(b.qp,0),coalesce(b.js,0),coalesce(c.qp,0),coalesce(c.js,0),coalesce(d.qp,0),coalesce(e.qp,0),coalesce(f.qp,0),coalesce(g.qp,0),coalesce(h.qp,0),coalesce(i.qp,0),the_day
+from (select branch from administrator.hn_branch where branch<>'D')a 
+left join(
+select x.branch,count(x.agntnum)qp,sum(x.js)js from(select branch,agntnum,sum(acctamt_std)bb,count(distinct chdrnum)js
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype ='RC'
+and batctrcde<>'TGJC'
+group by branch,agntnum having sum(acctamt_std)>=10000)x group by x.branch)b on a.branch=b.branch
+left join(
+select x.branch,count(x.agntnum)qp,sum(x.js)js from(select branch,agntnum,sum(acctamt_std)bb,count(distinct chdrnum)js
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday
+and agtype  ='RC'
+and batctrcde<>'TGJC'
+group by branch,agntnum having sum(acctamt_std)>=10000)x group by x.branch)c on a.branch=c.branch
+left join(
+select x.branch,count(x.agntnum)qp from(select branch,agntnum,sum(acctamt_std)bb 
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype ='RC'
+and batctrcde<>'TGJC'
+group by branch,agntnum having sum(acctamt_std)>=30000)x group by x.branch)d on a.branch=d.branch
+left join(
+select x.branch,count(x.agntnum)qp from(select branch,agntnum,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday
+and agtype ='RC'
+and batctrcde<>'TGJC' 
+group by branch,agntnum having sum(acctamt_std)>=30000)x group by x.branch)e on a.branch=e.branch 
+left join(
+select x.branch,count(x.agntnum)qp from(select branch,agntnum,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype ='RC'
+and batctrcde<>'TGJC'
+group by branch,agntnum having sum(acctamt_std)>=50000)x group by x.branch)f on a.branch=f.branch
+left join(
+select x.branch,count(x.agntnum)qp from(select branch,agntnum,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday
+and agtype ='RC'
+and batctrcde<>'TGJC'
+group by branch,agntnum having sum(acctamt_std)>=50000)x group by x.branch)g on a.branch=g.branch
+left join(
+select x.branch,count(x.agntnum)qp from(select branch,agntnum,sum(acctamt_std)bb 
+from administrator.hn_acctinfo
+where trandate between the_beginday and the_monenday
+and agtype ='RC'
+and batctrcde<>'TGJC'
+group by branch,agntnum having sum(acctamt_std)>=100000)x group by x.branch)h on a.branch=h.branch
+left join(
+select x.branch,count(x.agntnum)qp from(select branch,agntnum,sum(acctamt_std)bb
+from administrator.hn_acctinfo
+where trandate between the_bf_beginday and the_bf_monenday
+and agtype ='RC'
+and batctrcde<>'TGJC' 
+group by branch,agntnum having sum(acctamt_std)>=100000)x group by x.branch)i on a.branch=i.branch 
+with ur;
+update administrator.hn_index_branch set his = 'N' where ctime=decimal(current date);
+
+
+END P1@

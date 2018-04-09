@@ -1,0 +1,19 @@
+create procedure p.get_xdgx(myDays decimal(3,0))
+begin
+        -----------------------------------------------
+        declare dateStart decimal(8,0);
+        declare dateEnd decimal(8,0);
+        set dateStart=decimal(current date - myDays days);
+        set dateEnd=decimal(current date);
+        -----------------------------------------------
+        delete from administrator.hn_xdgx where trandate between dateStart and dateEnd;
+        -----------------------------------------------
+	insert into administrator.hn_xdgx
+	select prod_cat,(case when prod_cat='IND' then right(plcy_lgcy_nbr,8) else plcy_lgcy_nbr end)as chdrnum,
+	chnl_id,date_na,branch,txn_amt,v_amt
+                from tk_info.new_xdgx
+                        where date_na between dateStart and dateEnd;
+        ------------------------------------------------------------------------------
+        update administrator.hn_xdgx set branch='80' 
+                where trandate between dateStart and dateEnd and branch='I0';
+end @

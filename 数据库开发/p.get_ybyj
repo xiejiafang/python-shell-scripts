@@ -1,0 +1,65 @@
+create procedure p.get_ybyj(myYears decimal(2,0))
+begin atomic
+        declare dateStart decimal(8,0);
+        declare dateEnd decimal(8,0);
+        declare f_dateStart date;
+        declare f_dateEnd date;
+        set dateStart = year(current date - myYears years)*10000+0101;
+        set dateEnd = decimal(current date);
+        set f_dateStart = trim(char(year(date(current timestamp) - myYears years))) || '-01-01';
+        set f_dateEnd = current date;
+
+--个险业绩（用职级界定）
+insert into administrator.hn_ybyj
+select char('AA') as series,a.branch,a.aracde,a.chdrnum,a.cnttype,acctamt,acctamt_std,freq,
+smallint(period) as period,b.statcode,a.agntnum,a.agntname as name,a.trandate,'g' as sort,
+a.teamnum,a.teamname,'' as statcode2
+        from administrator.hn_acctinfo a,administrator.hn_chdrinfo b
+                where a.chdrnum = b.chdrnum and agtype IN ('BY','BZ','BC','BD','BM','BP','BA','FM') 
+		and a.agntnum <> 'FDP1P110'
+                and a.trandate between dateStart and dateEnd;
+--银保业绩
+insert into administrator.hn_ybyj
+select char('AA') as series,c.branch,medi_code as aracde,bm_cert as chdrnum,kinds as cnttype,jf_je as acctamt,
+case when jf_way = 12 then jf_je*jfyears/10 else jf_je/10 end as acctamt_std,char(jf_way) as freq,
+smallint(jfyears) as period,app_flag as statcode,a.agency_code as agntnum,'' as agntname,decimal(a.jf_rq) as trandate,
+'y' as sort,'' as teamnum,'' as teamname,a.detail_flag as statcode2
+        from administrator.hn_basdata a,administrator.hn_branch c
+                where a.station = c.station  and app_flag IN ('1','WT') and a.agency_code not like '%WY%' 
+                and a.jf_rq between f_dateStart and f_dateEnd;  
+--更新网点代码
+update administrator.hn_ybyj a set (aracde) = 
+        (select ficcode from administrator.hn_zcdrpf b 
+                where a.chdrnum=b.chdrnum fetch first 1 rows only)
+        where sort = 'g' and exists (select reportag01 from administrator.hn_zcdrpf c
+                                                where a.chdrnum=c.chdrnum);
+--更新手工单
+update administrator.hn_ybyj a set agntnum = 
+        case when (select reportag01 from administrator.hn_zcdrpf b 
+                where a.chdrnum=b.chdrnum) <> ''
+        then (select reportag01 from administrator.hn_zcdrpf b 
+                where a.chdrnum=b.chdrnum fetch first 1 rows only)
+        else agntnum end        
+        where sort = 'g' and exists (select reportag01 from administrator.hn_zcdrpf c
+                                                where a.chdrnum=c.chdrnum);                  
+--将个险工号全部更新为银保工号        
+update administrator.hn_ybyj a set agntnum = 
+        case when (select distinct agntnum from administrator.hn_ybagent b 
+                        where a.agntnum=b.agntnum) is null then 'G'||agntnum
+        else (select distinct agency_code from administrator.hn_ybagent b 
+                        where a.agntnum=b.agntnum 
+                        and b.rq_make=(select distinct max(rq_make) 
+                                from administrator.hn_ybagent c 
+                                        where c.agency_code=b.agency_code fetch first 1 rows only)
+                                fetch first 1 rows only) end
+        where sort='g' and exists(select d.agntnum from administrator.hn_ybagent d where a.agntnum=d.agntnum);
+--只有个险工号，无银保工号的情况
+update administrator.hn_ybyj a set series = 'TZ'
+        where agntnum like 'G%' or series ='AA';                                       
+                                              
+--更新系列                
+update administrator.hn_ybyj b set (series,agntname,teamnum,teamname) = 
+        (select series,name,agency_group,group_name from administrator.hn_ybagent a where a.agency_code=b.agntnum)
+        where exists (select * from administrator.hn_ybagent c
+                                                where c.agency_code=b.agntnum);      
+end@

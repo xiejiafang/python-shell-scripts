@@ -1,0 +1,126 @@
+cREATE PROCEDURE p.get_cnt(in t_date date)
+        DYNAMIC RESULT SETS 1
+P1: BEGIN
+
+        declare MonEnd decimal(8,0);
+        declare MonStart decimal(8,0);
+        declare Num integer;
+        declare Today decimal(8,0);
+
+        set t_date = t_date - 1 days;
+        SET MonStart = year(t_date)*10000+month(t_date)*100+01;
+        SET MonEnd = year(t_date)*10000+month(t_date)*100+day(t_date);
+        set Num = year(t_date)*100+month(t_date);
+        set Today = year(date(current timestamp))*10000+month(date(current timestamp))*100+day(date(current timestamp));
+
+
+        delete from administrator.hn_cnt_kpi where sort = 'GX' and month = Num;
+        insert into administrator.hn_cnt_kpi(branch,sort,month,cnttype,zbf,cnt_bf,zrl,cnt_rl,zjs,cnt_js,insert_date)
+        select a.branch,'GX',Num,c.cnttype,value(zbf,0),value(fbf,0),value(rl,0),value(hd,0),value(zjs,0),value(js,0),Today from
+        (select branch,name from administrator.hn_branch where branch <> 'D') a left join
+        (select branch,sum(acctamt_std)zbf from administrator.part_cnt_kpi
+        where trandate between MonStart and MonEnd
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch) b on a.branch=b.branch left join
+
+        (select branch,cnttype,sum(acctamt_std)fbf from administrator.part_cnt_kpi
+        where trandate between MonStart and MonEnd
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch,cnttype)c on c.branch=a.branch left join
+        (select branch,count(distinct agntnum)rl from administrator.hn_agntinfo
+        where dteapp <=MonEnd and DTETRM >=MonStart
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch)d on a.branch=d.branch left join
+
+        (select branch,cnttype,count(distinct agntnum) hd from
+        (select branch,cnttype,agntnum from administrator.part_cnt_kpi
+        where trandate between MonStart and MonEnd
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch,agntnum,cnttype) a
+        group by branch,cnttype) e on c.cnttype=e.cnttype and e.branch=a.branch left join
+
+        (select branch,count(distinct chdrnum) zjs
+        from administrator.part_cnt_kpi
+        where trandate between MonStart and MonEnd
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch)f on a.branch=f.branch left join
+
+        (select branch,cnttype,count(distinct chdrnum) js
+        from administrator.part_cnt_kpi
+        where trandate between MonStart and MonEnd
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS','RC')
+        group by branch,cnttype)g on a.branch=g.branch and g.cnttype = c.cnttype;
+
+        delete from administrator.hn_cnt_kpi where sort = 'YX' and month = Num;
+        insert into administrator.hn_cnt_kpi(branch,sort,month,cnttype,zbf,cnt_bf,zrl,cnt_rl,zjs,cnt_js,insert_date)
+        select a.branch,'YX',Num,c.cnttype,value(zbf,0),value(fbf,0),value(rl,0),value(hd,0),value(zjs,0),value(js,0),Today from
+        (select branch,name from administrator.hn_branch where branch <> 'D') a left join
+        (select branch,sum(acctamt_std)zbf from administrator.part_cnt_kpi
+        where trandate between MonStart and MonEnd
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS')
+        group by branch) b on a.branch=b.branch left join
+
+        (select branch,cnttype,sum(acctamt_std)fbf from administrator.part_cnt_kpi
+        where trandate between MonStart and MonEnd
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS')
+        group by branch,cnttype)c on c.branch=a.branch left join
+
+        (select branch,count(distinct agntnum)rl from administrator.hn_agntinfo
+        where dteapp <=MonEnd and DTETRM >=MonStart
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS')
+        group by branch)d on a.branch=d.branch left join
+
+        (select branch,cnttype,count(distinct agntnum) hd from
+        (select branch,cnttype,agntnum from administrator.part_cnt_kpi
+        where trandate between MonStart and MonEnd
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS')
+        group by branch,agntnum,cnttype) a
+        group by branch,cnttype) e on c.cnttype=e.cnttype and e.branch=a.branch left join
+
+        (select branch,count(distinct chdrnum) zjs
+        from administrator.part_cnt_kpi
+        where trandate between MonStart and MonEnd
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS')
+        group by branch)f on a.branch=f.branch left join
+
+        (select branch,cnttype,count(distinct chdrnum) js
+        from administrator.part_cnt_kpi
+        where trandate between MonStart and MonEnd
+        and agtype in('TA','SA','SM','SD','AS','SS','UM','AD','SE','HD','TS')
+        group by branch,cnttype)g on a.branch=g.branch and g.cnttype = c.cnttype;
+
+        delete from administrator.hn_cnt_kpi where sort = 'SZ' and month = Num;
+        insert into administrator.hn_cnt_kpi(branch,sort,month,cnttype,zbf,cnt_bf,zrl,cnt_rl,zjs,cnt_js,insert_date)
+        select a.branch,'SZ',Num,c.cnttype,value(zbf,0),value(fbf,0),value(rl,0),value(hd,0),value(zjs,0),value(js,0),Today from
+        (select branch,name from administrator.hn_branch where branch <> 'D') a left join
+        (select branch,sum(acctamt_std)zbf from administrator.part_cnt_kpi
+        where trandate between MonStart and MonEnd
+        and agtype in('RC','CR')
+        group by branch) b on a.branch=b.branch left join
+        (select branch,cnttype,sum(acctamt_std)fbf from administrator.part_cnt_kpi
+        where trandate between MonStart and MonEnd
+        and agtype in('RC','CR')
+        group by branch,cnttype)c on c.branch=a.branch left join
+        (select branch,count(distinct agntnum)rl from administrator.hn_agntinfo
+        where dteapp <=MonEnd and DTETRM >=MonStart
+        and agtype in('RC','CR')
+        group by branch)d on a.branch=d.branch left join
+        (select branch,cnttype,count(distinct agntnum) hd from
+        (select branch,cnttype,agntnum from administrator.part_cnt_kpi
+        where trandate between MonStart and MonEnd
+        and agtype in('RC','CR')
+        group by branch,agntnum,cnttype ) a
+        group by branch,cnttype) e on c.cnttype=e.cnttype and e.branch=a.branch left join
+
+        (select branch,count(distinct chdrnum) zjs
+        from administrator.part_cnt_kpi
+        where trandate between MonStart and MonEnd
+        and agtype in('RC','CR')
+        group by branch)f on a.branch=f.branch left join
+
+        (select branch,cnttype,count(distinct chdrnum) js
+        from administrator.part_cnt_kpi
+        where trandate between MonStart and MonEnd
+        and agtype in('RC','CR')
+        group by branch,cnttype)g on a.branch=g.branch and g.cnttype = c.cnttype;
+END P1@
